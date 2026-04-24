@@ -1,161 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Map of Internal Migration Patterns in Argentina, 2010</title>
 
-  <title>Geovisualization Portfolio SEES 3540</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      background-color: #f5f5f5;
+      color: #222;
+      line-height: 1.6;
+    }
 
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/3-col-portfolio.css" rel="stylesheet">
+    header {
+      background-color: #222;
+      color: white;
+      padding: 28px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin-top: 8px;
+      font-size: 16px;
+      color: #ddd;
+    }
+
+    nav {
+      background-color: #333;
+      text-align: center;
+      padding: 10px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      max-width: 1050px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    section {
+      background-color: white;
+      padding: 25px;
+      margin-bottom: 25px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 8px;
+    }
+
+    .main-map {
+      width: 100%;
+      max-width: 760px;
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+    }
+
+    .caption {
+      font-size: 14px;
+      color: #555;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .settings-grid img {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .button-link {
+      display: inline-block;
+      background-color: #222;
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    .button-link:hover {
+      background-color: #444;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #222;
+      color: white;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-      <a class="navbar-brand" href="shortbio.html">Ege Duran's Geovisualization Portfolio</a>
+  <header>
+    <h1>Flow Map of Internal Migration Patterns in Argentina, 2010</h1>
+    <p>SEES 3540 Assignment 6 | Ege Duran</p>
+  </header>
 
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="index.html">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="shortbio.html">About</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="EgeDuran_cv.pdf" target="_blank">Resume/CV</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="mailto:duran.ege1@gmail.com">Contact</a>
-          </li>
-        </ul>
-      </div>
-    </div>
+  <nav>
+    <a href="index.html">Portfolio Home</a>
+    <a href="shortbio.html">Short Bio</a>
+    <a href="mailto:duran.ege1@gmail.com">Contact</a>
   </nav>
 
-  <div class="container">
+  <main>
 
-    <h1 class="my-4">Geovisualization Portfolio SEES 3540
-      <small>Ege Duran</small>
-    </h1>
+    <section>
+      <h2>Final Flow Map</h2>
+      <img src="map.png" alt="Flow map of internal migration patterns in Argentina in 2010" class="main-map">
 
-    <div class="row">
+      <p class="caption">
+        Flow map of internal migration patterns in Argentina in 2010, showing major origin–destination migration flows,
+        province-level population density, and total connected flow at each node.
+      </p>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="https://observablehq.com/d/5dc4ffb8e9d4d87c" target="_blank">
-            <img class="card-img-top" src="map1.png" alt="Assignment 1 map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="https://observablehq.com/d/5dc4ffb8e9d4d87c" target="_blank">Assignment 1: Web Mapping Workflow</a>
-            </h4>
-            <p class="card-text">
-              This notebook prepares polygon data for web mapping by converting shapefiles to TopoJSON, validating WGS84 coordinates, uploading TopoJSON and CSV files, and joining spatial features with tabular attributes in Observable.
-            </p>
-          </div>
+      <p>
+        This map visualizes the dominant internal migration flows among Argentine provinces in 2010.
+        The flow lines represent major origin–destination migration connections, the node symbols show total connected
+        flow at each province, and the choropleth background shows population density.
+      </p>
+    </section>
+
+    <section>
+      <h2>Flow Map Design</h2>
+
+      <p>
+        The map was designed to emphasize the dominant migration structure while still preserving geographic context.
+        The flow layer uses curved half-arrow symbols because the arrows communicate direction and the curved lines help
+        separate connections that would be harder to follow as straight lines.
+      </p>
+
+      <p>
+        Only the top 100 flows were displayed to reduce clutter and keep the strongest migration corridors readable.
+        Flow magnitude was classified with Natural Breaks into three classes, using a red color ramp and varying line
+        widths to create a clear hierarchy between smaller and larger migration flows.
+      </p>
+
+      <p>
+        The node layer uses proportional black circles to represent total connected flow, which combines incoming and
+        outgoing migration. This makes it possible to identify the strongest migration hubs. The choropleth background
+        maps population density with five quantile classes using a purple sequential color scheme, so the reader can
+        compare migration intensity with the broader population structure.
+      </p>
+    </section>
+
+    <section>
+      <h2>FlowMapper Project File</h2>
+
+      <p>
+        The FlowMapper project file can be opened in FlowMapper to review or reload the complete map design.
+      </p>
+
+      <a href="flowmap_project.json" class="button-link" target="_blank">Open FlowMapper Project File</a>
+    </section>
+
+    <section>
+      <h2>FlowMapper Layer Settings</h2>
+
+      <p>
+        The images below document the main FlowMapper layer selections used to create the final map.
+      </p>
+
+      <div class="settings-grid">
+        <div>
+          <img src="Basemap.png" alt="FlowMapper basemap settings">
+          <p class="caption">Basemap settings</p>
+        </div>
+
+        <div>
+          <img src="Flow.png" alt="FlowMapper flow layer settings">
+          <p class="caption">Flow layer settings</p>
+        </div>
+
+        <div>
+          <img src="Nodes.png" alt="FlowMapper node layer settings">
+          <p class="caption">Node layer settings</p>
+        </div>
+
+        <div>
+          <img src="Regions.png" alt="FlowMapper region layer settings">
+          <p class="caption">Region layer settings</p>
         </div>
       </div>
+    </section>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="https://observablehq.com/d/5079f8a8f5dbb7ac" target="_blank">
-            <img class="card-img-top" src="map2.png" alt="Assignment 2 map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="https://observablehq.com/d/5079f8a8f5dbb7ac" target="_blank">Assignment 2: Classification and Colors</a>
-            </h4>
-            <p class="card-text">
-              This notebook compares classification methods and color scales for a normalized water-surface variable, including unclassed, quantile, equal interval, natural breaks, and manual threshold approaches.
-            </p>
-          </div>
-        </div>
-      </div>
+    <section>
+      <h2>Interpretation of Flow Patterns</h2>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="https://observablehq.com/d/ad8f1f41c90c2cfb" target="_blank">
-            <img class="card-img-top" src="map3.png" alt="Assignment 3 map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="https://observablehq.com/d/ad8f1f41c90c2cfb" target="_blank">Assignment 3: Choropleth Mapping</a>
-            </h4>
-            <p class="card-text">
-              This project builds a choropleth map by joining county geometry with tabular data, classifying values with natural breaks, applying a D3 color scale, and adding a legend and hover values.
-            </p>
-          </div>
-        </div>
-      </div>
+      <p>
+        The map shows a strongly centralized migration structure, with the most intense internal migration focused on
+        Buenos Aires Province and the broader east-central corridor of Argentina. Buenos Aires has the largest total
+        connected flow, followed by Córdoba, Capital Federal, Santa Fe, and Mendoza, which shows that a small number of
+        provinces dominate the national migration network.
+      </p>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="https://observablehq.com/d/7bc17811eb4d6091" target="_blank">
-            <img class="card-img-top" src="map4.png" alt="Assignment 4 map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="https://observablehq.com/d/7bc17811eb4d6091" target="_blank">Assignment 4: Graduated Symbol Mapping</a>
-            </h4>
-            <p class="card-text">
-              This notebook maps the percentage of poor bridges by Iowa county using graduated symbols placed on county midpoints, allowing bridge-condition patterns to be compared across the state.
-            </p>
-          </div>
-        </div>
-      </div>
+      <p>
+        Buenos Aires Province is both the strongest sender and the strongest receiver of migrants. Other important
+        sending locations include Córdoba, Santa Fe, Capital Federal, and Mendoza. The strongest receiving locations are
+        also concentrated in the east-central region, especially Buenos Aires, Capital Federal, and Córdoba.
+      </p>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="https://observablehq.com/d/1369d44743989b2d" target="_blank">
-            <img class="card-img-top" src="map5.png" alt="Assignment 5 map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="https://observablehq.com/d/1369d44743989b2d" target="_blank">Assignment 5: Bivariate Choropleth Mapping</a>
-            </h4>
-            <p class="card-text">
-              This project maps Iowa bridge vulnerability using a bivariate choropleth that combines bridge condition and population exposure, showing both variables together at the county level.
-            </p>
-          </div>
-        </div>
-      </div>
+      <p>
+        The general direction of the strongest flows is from the interior toward the east-central part of the country,
+        especially toward the Buenos Aires–Capital Federal area. Several important flows also connect central provinces
+        such as Córdoba and Santa Fe, showing that the migration system includes both national concentration and regional
+        circulation.
+      </p>
 
-      <div class="col-lg-4 col-sm-6 portfolio-item">
-        <div class="card h-100">
-          <a href="flowmap.html" target="_blank">
-            <img class="card-img-top" src="map6.png" alt="Assignment 6 flow map">
-          </a>
-          <div class="card-body">
-            <h4 class="card-title">
-              <a href="flowmap.html" target="_blank">Assignment 6: Flow Mapping</a>
-            </h4>
-            <p class="card-text">
-              This page presents a flow map of internal migration in Argentina, including the exported map image, FlowMapper project file, layer settings, and interpretation of major origin–destination patterns.
-            </p>
-          </div>
-        </div>
-      </div>
+      <p>
+        The flow pattern is closely related to the population-density background and node-symbol pattern. Provinces with
+        larger total connected flow are mainly located in the more populated eastern and central parts of Argentina,
+        while many western, northern, and southern peripheral provinces have smaller nodes and fewer major connections.
+        This indicates a core–periphery migration structure shaped by Argentina’s major urban and economic centers.
+      </p>
+    </section>
 
-    </div>
+    <section>
+      <h2>References</h2>
 
-  </div>
+      <p>
+        Koylu, C., & Guo, D. (2017). Design and evaluation of line symbolizations for origin–destination flow maps.
+        <em>Information Visualization, 16</em>(4), 309–331.
+      </p>
 
-  <footer class="py-5 bg-dark">
-    <div class="container">
-      <p class="m-0 text-center text-white">Copyright &copy; Ege Duran 2026</p>
-    </div>
+      <p>
+        Koylu, C., Tian, G., & Windsor, M. (2022). FlowMapper.org: A web-based framework for designing origin-destination
+        flow maps. <em>Journal of Maps</em>.
+      </p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>SEES 3540 Assignment 6 | Ege Duran</p>
   </footer>
-
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
