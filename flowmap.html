@@ -111,7 +111,19 @@
     .button-link:hover {
       background-color: #444;
     }
+.map-crop {
+  width: 100%;
+  max-width: 760px;
+  margin: 20px auto;
+  overflow: hidden;
+  border: 1px solid #ccc;
+}
 
+.map-crop img {
+  width: 140%;
+  margin-left: -20%;
+  display: block;
+}
     footer {
       text-align: center;
       padding: 20px;
@@ -139,7 +151,9 @@
 
     <section>
       <h2>Final Flow Map</h2>
-      <img src="map.png" alt="Flow map of internal migration patterns in Argentina in 2010" class="main-map">
+      <div class="map-crop">
+  <img src="map.png" alt="Flow map of internal migration patterns in Argentina in 2010">
+</div>
 
       <p class="caption">
         Flow map of internal migration patterns in Argentina in 2010, showing major origin–destination migration flows,
