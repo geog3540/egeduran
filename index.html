@@ -9,6 +9,46 @@
 
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="css/3-col-portfolio.css" rel="stylesheet">
+
+  <style>
+    .card.h-100 {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card > a {
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f8f8f8;
+    }
+
+    .card-img-top {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .card-title {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .card-text {
+      text-align: left;
+    }
+  </style>
 </head>
 
 <body>
@@ -48,97 +88,115 @@
 
     <div class="row">
 
+      <!-- Project 1 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="https://observablehq.com/d/5dc4ffb8e9d4d87c" target="_blank">
-            <img class="card-img-top" src="map1.png" alt="Assignment 1 map">
+            <img class="card-img-top" src="map1.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="https://observablehq.com/d/5dc4ffb8e9d4d87c" target="_blank">Assignment 1: Web Mapping Workflow</a>
+              <a href="https://observablehq.com/d/5dc4ffb8e9d4d87c" target="_blank">
+                Assignment 1: Web Mapping Workflow
+              </a>
             </h4>
             <p class="card-text">
-              This notebook prepares polygon data for web mapping by converting shapefiles to TopoJSON, validating WGS84 coordinates, uploading TopoJSON and CSV files, and joining spatial features with tabular attributes in Observable.
+              Prepares spatial data for web mapping by converting shapefiles to TopoJSON, validating coordinates, and joining geometry with tabular attributes.
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Project 2 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="https://observablehq.com/d/5079f8a8f5dbb7ac" target="_blank">
-            <img class="card-img-top" src="map2.png" alt="Assignment 2 map">
+            <img class="card-img-top" src="map2.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="https://observablehq.com/d/5079f8a8f5dbb7ac" target="_blank">Assignment 2: Classification and Colors</a>
+              <a href="https://observablehq.com/d/5079f8a8f5dbb7ac" target="_blank">
+                Assignment 2: Classification and Colors
+              </a>
             </h4>
             <p class="card-text">
-              This notebook compares classification methods and color scales for a normalized water-surface variable, including unclassed, quantile, equal interval, natural breaks, and manual threshold approaches.
+              Compares classification methods and color schemes including quantile, equal interval, natural breaks, and threshold mapping.
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Project 3 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="https://observablehq.com/d/ad8f1f41c90c2cfb" target="_blank">
-            <img class="card-img-top" src="map3.png" alt="Assignment 3 map">
+            <img class="card-img-top" src="map3.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="https://observablehq.com/d/ad8f1f41c90c2cfb" target="_blank">Assignment 3: Choropleth Mapping</a>
+              <a href="https://observablehq.com/d/ad8f1f41c90c2cfb" target="_blank">
+                Assignment 3: Choropleth Mapping
+              </a>
             </h4>
             <p class="card-text">
-              This project builds a choropleth map by joining county geometry with tabular data, classifying values with natural breaks, applying a D3 color scale, and adding a legend and hover values.
+              Builds a choropleth map using classified data, D3 color scales, legends, and interactive hover display.
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Project 4 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="https://observablehq.com/d/7bc17811eb4d6091" target="_blank">
-            <img class="card-img-top" src="map4.png" alt="Assignment 4 map">
+            <img class="card-img-top" src="map4.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="https://observablehq.com/d/7bc17811eb4d6091" target="_blank">Assignment 4: Graduated Symbol Mapping</a>
+              <a href="https://observablehq.com/d/7bc17811eb4d6091" target="_blank">
+                Assignment 4: Graduated Symbol Mapping
+              </a>
             </h4>
             <p class="card-text">
-              This notebook maps the percentage of poor bridges by Iowa county using graduated symbols placed on county midpoints, allowing bridge-condition patterns to be compared across the state.
+              Maps bridge condition using graduated symbols placed at county centroids to compare spatial patterns.
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Project 5 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="https://observablehq.com/d/1369d44743989b2d" target="_blank">
-            <img class="card-img-top" src="map5.png" alt="Assignment 5 map">
+            <img class="card-img-top" src="map5.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="https://observablehq.com/d/1369d44743989b2d" target="_blank">Assignment 5: Bivariate Choropleth Mapping</a>
+              <a href="https://observablehq.com/d/1369d44743989b2d" target="_blank">
+                Assignment 5: Bivariate Choropleth Mapping
+              </a>
             </h4>
             <p class="card-text">
-              This project maps Iowa bridge vulnerability using a bivariate choropleth that combines bridge condition and population exposure, showing both variables together at the county level.
+              Combines bridge condition and population exposure in a bivariate choropleth to show spatial relationships.
             </p>
           </div>
         </div>
       </div>
 
+      <!-- Project 6 -->
       <div class="col-lg-4 col-sm-6 portfolio-item">
         <div class="card h-100">
           <a href="flowmap.html" target="_blank">
-            <img class="card-img-top" src="map6.png" alt="Assignment 6 flow map">
+            <img class="card-img-top" src="map6.png">
           </a>
           <div class="card-body">
             <h4 class="card-title">
-              <a href="flowmap.html" target="_blank">Assignment 6: Flow Mapping</a>
+              <a href="flowmap.html" target="_blank">
+                Assignment 6: Flow Mapping
+              </a>
             </h4>
             <p class="card-text">
-              This page presents a flow map of internal migration in Argentina, including the exported map image, FlowMapper project file, layer settings, and interpretation of major origin–destination patterns.
+              Presents a flow map of migration patterns including map design, FlowMapper project file, and interpretation.
             </p>
           </div>
         </div>
