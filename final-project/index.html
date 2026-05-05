@@ -1,1 +1,1128 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iowa Bridge Geovisualization Prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    :root {
+      --bg: #f4f1ec;
+      --panel: rgba(255, 255, 255, 0.94);
+      --ink: #1f2933;
+      --muted: #667085;
+      --line: #d3d7dc;
+      --county-line: #6b7280;
+      --accent: #2f5d7c;
+      --accent-dark: #1d4058;
+      --danger: #b42318;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    #app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: 86px 1fr;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    header {
+      grid-column: 1 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+      z-index: 5;
+    }
+
+    .title-block h1 {
+      margin: 0 0 4px 0;
+      font-size: 21px;
+      letter-spacing: 0.2px;
+    }
+
+    .title-block p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-controls {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 10px;
+      align-items: end;
+      flex: 1;
+      max-width: 980px;
+    }
+
+    aside {
+      grid-row: 2;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 16px;
+      overflow-y: auto;
+      z-index: 4;
+    }
+
+    main {
+      grid-column: 2;
+      grid-row: 2;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-section {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-section h2 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #344054;
+      margin: 10px 0 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    select, input, button {
+      width: 100%;
+      border: 1px solid #c6ccd3;
+      border-radius: 8px;
+      padding: 8px 9px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 700;
+      transition: 120ms ease;
+    }
+
+    button:hover { background: var(--accent-dark); }
+
+    button.secondary {
+      background: #fff;
+      color: var(--accent-dark);
+      border-color: #9ab2c4;
+    }
+
+    button.secondary:hover { background: #edf4f8; }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .hint {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .metric-card {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+
+    .metric-card strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 3px;
+    }
+
+    .metric-card span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    #mapSvg {
+      width: 100%;
+      height: 100%;
+      background: #f7f3ed;
+    }
+
+    .county {
+      stroke: #676f78;
+      stroke-width: 0.65;
+      vector-effect: non-scaling-stroke;
+      cursor: pointer;
+    }
+
+    .county:hover, .county.selected {
+      stroke: #111827;
+      stroke-width: 1.8;
+    }
+
+    .bridge-point {
+      stroke: #111827;
+      stroke-width: 0.45;
+      fill-opacity: 0.78;
+      cursor: pointer;
+    }
+
+    .bridge-point:hover {
+      stroke-width: 1.6;
+      fill-opacity: 1;
+    }
+
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(17, 24, 39, 0.92);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translate(-50%, calc(-100% - 12px));
+      max-width: 260px;
+      z-index: 10;
+    }
+
+    #legend {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      min-width: 360px;
+      max-width: 720px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      z-index: 3;
+    }
+
+    #legend h3 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+      font-size: 12px;
+    }
+
+    .swatch {
+      width: 20px;
+      height: 14px;
+      border: 1px solid rgba(0,0,0,0.18);
+      flex: 0 0 auto;
+    }
+
+    .circle-swatch {
+      border-radius: 50%;
+      background: #6b7280;
+      display: inline-block;
+      border: 1px solid #111827;
+    }
+
+    .bivar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 28px) 1fr;
+      grid-template-rows: repeat(3, 22px);
+      gap: 2px 8px;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .north-arrow {
+      position: absolute;
+      top: 22px;
+      right: 28px;
+      z-index: 2;
+      text-align: center;
+      font-weight: 800;
+      color: #111827;
+      user-select: none;
+    }
+
+    .north-arrow .arrow {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 38px solid #111827;
+      margin: 0 auto 2px;
+    }
+
+    .scale-note {
+      position: absolute;
+      left: 22px;
+      bottom: 18px;
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      z-index: 2;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(17,24,39,0.32);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-card {
+      width: min(900px, 92vw);
+      max-height: 86vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .close-btn {
+      width: auto;
+      padding: 7px 12px;
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(300px, 1fr));
+      gap: 14px;
+    }
+
+    .chart-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 260px;
+    }
+
+    .chart-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+
+    .manual-wrap { display: none; }
+    .manual-wrap.active { display: block; }
+    .bivar-only { display: none; }
+    .bivar-only.active { display: block; }
+    .point-only { display: none; }
+    .point-only.active { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="title-block">
+        <h1>Iowa Bridge Infrastructure and Flood-Closure Explorer</h1>
+        <p>Prototype layout for county summaries, bridge-level exploration, classification, histograms, and dynamic legends.</p>
+      </div>
+
+      <div class="top-controls">
+        <div>
+          <label for="classificationSelect">Classification</label>
+          <select id="classificationSelect">
+            <option value="quantile">Quantile</option>
+            <option value="equal">Equal interval</option>
+            <option value="jenks">Natural breaks</option>
+            <option value="manual">Manual breaks</option>
+          </select>
+        </div>
+        <div>
+          <label for="classCountInput">Classes</label>
+          <input id="classCountInput" type="number" min="3" max="9" value="5" />
+        </div>
+        <div>
+          <label for="colorSchemeSelect">Color scheme</label>
+          <select id="colorSchemeSelect">
+            <option value="blues">Blues</option>
+            <option value="greens">Greens</option>
+            <option value="oranges">Oranges</option>
+            <option value="purples">Purples</option>
+            <option value="reds">Reds</option>
+          </select>
+        </div>
+        <div class="manual-wrap" id="manualBreakWrap">
+          <label for="manualBreaksInput">Manual breaks</label>
+          <input id="manualBreaksInput" value="10,25,50,75" placeholder="Example: 10,25,50,75" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="histogramBtn" type="button">Check histogram</button>
+        </div>
+      </div>
+    </header>
+
+    <aside>
+      <div class="panel-section">
+        <h2>Layer selection</h2>
+        <label for="layerModeSelect">Display mode</label>
+        <select id="layerModeSelect">
+          <option value="county">County summary</option>
+          <option value="point">Bridge points</option>
+        </select>
+
+        <label for="countyVariableSelect">County variable</label>
+        <select id="countyVariableSelect"></select>
+
+        <label for="pointCountySelect">County for bridge points</label>
+        <select id="pointCountySelect"></select>
+
+        <label for="pointColorSelect">Point color</label>
+        <select id="pointColorSelect">
+          <option value="brcond">Bridge condition</option>
+          <option value="brage">Bridge age</option>
+          <option value="bradt">ADT</option>
+          <option value="brdetour">Detour length</option>
+          <option value="closureSeverity">Closure severity</option>
+        </select>
+
+        <label for="pointSizeSelect">Point size</label>
+        <select id="pointSizeSelect">
+          <option value="fixed">Fixed size</option>
+          <option value="bradt">ADT</option>
+          <option value="brdetour">Detour length</option>
+          <option value="brage">Bridge age</option>
+        </select>
+      </div>
+
+      <div class="panel-section">
+        <h2>County bivariate option</h2>
+        <label for="countyStyleSelect">County style</label>
+        <select id="countyStyleSelect">
+          <option value="single">Single variable choropleth</option>
+          <option value="bivariate">Bivariate choropleth, 3 × 3</option>
+        </select>
+
+        <div class="bivar-only" id="bivarControls">
+          <label for="bivarXSelect">Bivariate X variable</label>
+          <select id="bivarXSelect"></select>
+          <label for="bivarYSelect">Bivariate Y variable</label>
+          <select id="bivarYSelect"></select>
+          <p class="hint">Bivariate mode fixes the county classes at 3 × 3. Quantile classification is usually the cleanest first option for this style.</p>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h2>Statistics</h2>
+        <button id="statsBtn" type="button" class="secondary">Open raw statistics</button>
+        <p class="hint">Statistics are generated from the selected county in point mode, or from the selected/clicked county in county mode.</p>
+      </div>
+
+      <div id="summaryCards"></div>
+    </aside>
+
+    <main>
+      <svg id="mapSvg"></svg>
+      <div class="north-arrow"><div class="arrow"></div>N</div>
+      <div class="scale-note">Scale bar placeholder — projection-based map, no basemap</div>
+      <div id="legend"></div>
+      <div id="tooltip"></div>
+    </main>
+  </div>
+
+  <div class="modal" id="histogramModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="histogramTitle">Histogram</h2>
+        <button class="close-btn" data-close="histogramModal">Close</button>
+      </div>
+      <svg id="histogramSvg" width="840" height="430"></svg>
+      <p class="hint" id="histogramNote"></p>
+    </div>
+  </div>
+
+  <div class="modal" id="statsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="statsTitle">County bridge statistics</h2>
+        <button class="close-btn" data-close="statsModal">Close</button>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-box"><h3>Bridge condition</h3><svg id="conditionChart" width="380" height="235"></svg></div>
+        <div class="chart-box"><h3>Structure material</h3><svg id="structureChart" width="380" height="235"></svg></div>
+        <div class="chart-box"><h3>Age distribution</h3><svg id="ageChart" width="380" height="235"></svg></div>
+        <div class="chart-box"><h3>Closure count by scenario</h3><svg id="closureChart" width="380" height="235"></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COUNTY_FILE = "IowaCounty.json";
+    const BRIDGE_FILE = "bridgedata.json";
+
+    const countyVariables = [
+      { key: "Bridge", label: "Total bridges" },
+      { key: "Population", label: "Population" },
+      { key: "br_age", label: "Average bridge age" },
+      { key: "br_poor", label: "Poor-condition bridge count" },
+      { key: "br_poorper", label: "Poor-condition bridge %" },
+      { key: "fd_50", label: "50-year closure count" },
+      { key: "fd_100", label: "100-year closure count" },
+      { key: "fd_500", label: "500-year closure count" },
+      { key: "fd_50per", label: "50-year closure %" },
+      { key: "fd_100per", label: "100-year closure %" },
+      { key: "fd_500per", label: "500-year closure %" },
+      { key: "fd_50adt", label: "50-year disrupted ADT" },
+      { key: "fd_100adt", label: "100-year disrupted ADT" },
+      { key: "fd_500adt", label: "500-year disrupted ADT" },
+      { key: "fd_50detav", label: "50-year average detour" },
+      { key: "fd_100detav", label: "100-year average detour" },
+      { key: "fd_500detav", label: "500-year average detour" }
+    ];
+
+    const colorSchemes = {
+      blues: d3.schemeBlues[9],
+      greens: d3.schemeGreens[9],
+      oranges: d3.schemeOranges[9],
+      purples: d3.schemePurples[9],
+      reds: d3.schemeReds[9]
+    };
+
+    const conditionColors = { Good: "#2ca25f", Fair: "#f0c419", Poor: "#d73027", Unknown: "#9ca3af" };
+    const bivarColors = [
+      ["#e8e8e8", "#dfb0d6", "#be64ac"],
+      ["#ace4e4", "#a5add3", "#8c62aa"],
+      ["#5ac8c8", "#5698b9", "#3b4994"]
+    ];
+
+    const state = {
+      counties: null,
+      bridges: null,
+      projection: null,
+      path: null,
+      selectedCounty: null,
+      transform: d3.zoomIdentity
+    };
+
+    const svg = d3.select("#mapSvg");
+    const gRoot = svg.append("g");
+    const gCounties = gRoot.append("g").attr("class", "counties-layer");
+    const gPoints = gRoot.append("g").attr("class", "points-layer");
+    const tooltip = d3.select("#tooltip");
+
+    const zoom = d3.zoom()
+      .scaleExtent([1, 18])
+      .on("zoom", event => {
+        state.transform = event.transform;
+        gRoot.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
+    Promise.all([d3.json(COUNTY_FILE), d3.json(BRIDGE_FILE)]).then(([counties, bridges]) => {
+      state.counties = counties;
+      state.bridges = bridges;
+      populateControls();
+      resizeAndRender();
+      window.addEventListener("resize", resizeAndRender);
+      attachEvents();
+    }).catch(err => {
+      console.error(err);
+      d3.select("main").append("div")
+        .style("position", "absolute")
+        .style("top", "20px")
+        .style("left", "20px")
+        .style("background", "#fff")
+        .style("padding", "12px")
+        .style("border", "1px solid #ccc")
+        .text("Could not load IowaCounty.json or bridgedata.json. Put this HTML file in the same folder as both JSON files and run it through a local server.");
+    });
+
+    function populateControls() {
+      const countyOptions = state.counties.features
+        .map(d => d.properties.CountyName)
+        .sort(d3.ascending);
+
+      d3.select("#countyVariableSelect")
+        .selectAll("option")
+        .data(countyVariables)
+        .join("option")
+        .attr("value", d => d.key)
+        .text(d => d.label);
+
+      d3.select("#countyVariableSelect").property("value", "br_poorper");
+
+      d3.select("#pointCountySelect")
+        .selectAll("option")
+        .data(["All counties", ...countyOptions])
+        .join("option")
+        .attr("value", d => d === "All counties" ? "" : d)
+        .text(d => d);
+
+      d3.select("#bivarXSelect")
+        .selectAll("option")
+        .data(countyVariables)
+        .join("option")
+        .attr("value", d => d.key)
+        .text(d => d.label);
+
+      d3.select("#bivarYSelect")
+        .selectAll("option")
+        .data(countyVariables)
+        .join("option")
+        .attr("value", d => d.key)
+        .text(d => d.label);
+
+      d3.select("#bivarXSelect").property("value", "br_poorper");
+      d3.select("#bivarYSelect").property("value", "fd_500per");
+    }
+
+    function attachEvents() {
+      d3.selectAll("select,input").on("change", () => {
+        updateControlVisibility();
+        render();
+      });
+
+      d3.select("#histogramBtn").on("click", openHistogram);
+      d3.select("#statsBtn").on("click", openStats);
+
+      d3.selectAll("[data-close]").on("click", function() {
+        d3.select("#" + this.dataset.close).classed("open", false);
+      });
+
+      updateControlVisibility();
+    }
+
+    function updateControlVisibility() {
+      const classification = value("#classificationSelect");
+      const countyStyle = value("#countyStyleSelect");
+      const layerMode = value("#layerModeSelect");
+
+      d3.select("#manualBreakWrap").classed("active", classification === "manual" && countyStyle !== "bivariate");
+      d3.select("#bivarControls").classed("active", countyStyle === "bivariate" && layerMode === "county");
+      d3.select("#classCountInput").property("disabled", countyStyle === "bivariate" && layerMode === "county");
+      d3.select("#colorSchemeSelect").property("disabled", countyStyle === "bivariate" && layerMode === "county");
+    }
+
+    function resizeAndRender() {
+      const main = document.querySelector("main");
+      const width = main.clientWidth;
+      const height = main.clientHeight;
+      svg.attr("viewBox", [0, 0, width, height]);
+      state.projection = d3.geoIdentity().reflectY(true).fitExtent([[35, 25], [width - 35, height - 40]], state.counties);
+      state.path = d3.geoPath(state.projection);
+      render();
+    }
+
+    function render() {
+      if (!state.counties || !state.bridges || !state.path) return;
+      const layerMode = value("#layerModeSelect");
+      const countyStyle = value("#countyStyleSelect");
+      const selectedCountyFromDropdown = value("#pointCountySelect");
+      if (selectedCountyFromDropdown) state.selectedCounty = selectedCountyFromDropdown;
+
+      drawCounties(layerMode, countyStyle);
+      drawPoints(layerMode);
+      updateLegend(layerMode, countyStyle);
+      updateSummaryCards();
+    }
+
+    function drawCounties(layerMode, countyStyle) {
+      let fillFn;
+      if (layerMode === "county" && countyStyle === "bivariate") {
+        fillFn = bivariateFillFunction();
+      } else if (layerMode === "county") {
+        const attr = value("#countyVariableSelect");
+        const values = numericValues(state.counties.features, attr);
+        const scale = makeClassScale(values);
+        const colors = selectedColors(scale.range().length);
+        fillFn = d => {
+          const v = num(d.properties[attr]);
+          if (!Number.isFinite(v)) return "#e5e7eb";
+          return colors[scale(v)];
+        };
+      } else {
+        fillFn = d => d.properties.CountyName === state.selectedCounty ? "#dbeafe" : "#f8fafc";
+      }
+
+      gCounties.selectAll("path")
+        .data(state.counties.features, d => d.properties.FIPS)
+        .join("path")
+        .attr("class", d => "county" + (d.properties.CountyName === state.selectedCounty ? " selected" : ""))
+        .attr("d", state.path)
+        .attr("fill", fillFn)
+        .on("mousemove", (event, d) => showCountyTooltip(event, d))
+        .on("mouseleave", hideTooltip)
+        .on("click", (event, d) => {
+          state.selectedCounty = d.properties.CountyName;
+          d3.select("#pointCountySelect").property("value", state.selectedCounty);
+          if (value("#layerModeSelect") === "point") zoomToFeature(d);
+          render();
+        });
+    }
+
+    function drawPoints(layerMode) {
+      if (layerMode !== "point") {
+        gPoints.selectAll("circle").remove();
+        return;
+      }
+
+      const county = value("#pointCountySelect");
+      const points = state.bridges.features.filter(d => !county || d.properties.brcounty === county);
+      const colorKey = value("#pointColorSelect");
+      const sizeKey = value("#pointSizeSelect");
+      const radius = pointRadiusFunction(points, sizeKey);
+      const color = pointColorFunction(points, colorKey);
+
+      gPoints.selectAll("circle")
+        .data(points, d => d.properties.brid)
+        .join("circle")
+        .attr("class", "bridge-point")
+        .attr("cx", d => state.projection(d.geometry.coordinates)[0])
+        .attr("cy", d => state.projection(d.geometry.coordinates)[1])
+        .attr("r", d => radius(d))
+        .attr("fill", d => color(d))
+        .on("mousemove", (event, d) => showBridgeTooltip(event, d))
+        .on("mouseleave", hideTooltip);
+    }
+
+    function makeClassScale(values, forcedClassCount = null) {
+      const clean = values.filter(Number.isFinite).sort(d3.ascending);
+      const method = value("#classificationSelect");
+      const k = forcedClassCount || Math.max(3, Math.min(9, +value("#classCountInput") || 5));
+      if (!clean.length) return () => 0;
+
+      if (method === "manual" && !forcedClassCount) {
+        const breaks = value("#manualBreaksInput").split(",").map(d => +d.trim()).filter(Number.isFinite).sort(d3.ascending);
+        return d => d3.bisectRight(breaks, d);
+      }
+
+      if (method === "equal") {
+        const min = d3.min(clean), max = d3.max(clean);
+        const step = (max - min) / k;
+        const breaks = d3.range(1, k).map(i => min + step * i);
+        return d => d3.bisectRight(breaks, d);
+      }
+
+      if (method === "jenks") {
+        const breaks = jenksBreaks(clean, k);
+        return d => d3.bisectRight(breaks.slice(1, -1), d);
+      }
+
+      const quantiles = d3.range(1, k).map(i => d3.quantileSorted(clean, i / k));
+      return d => d3.bisectRight(quantiles, d);
+    }
+
+    function selectedColors(n) {
+      const scheme = colorSchemes[value("#colorSchemeSelect")] || d3.schemeBlues[9];
+      if (n <= 1) return [scheme[6]];
+      return d3.range(n).map(i => scheme[Math.round(1 + i * (7 / Math.max(1, n - 1)))]);
+    }
+
+    function bivariateFillFunction() {
+      const xKey = value("#bivarXSelect");
+      const yKey = value("#bivarYSelect");
+      const xScale = makeClassScale(numericValues(state.counties.features, xKey), 3);
+      const yScale = makeClassScale(numericValues(state.counties.features, yKey), 3);
+      return d => {
+        const x = num(d.properties[xKey]);
+        const y = num(d.properties[yKey]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return "#e5e7eb";
+        return bivarColors[Math.max(0, Math.min(2, yScale(y)))][Math.max(0, Math.min(2, xScale(x)))];
+      };
+    }
+
+    function pointColorFunction(points, key) {
+      if (key === "brcond") return d => conditionColors[d.properties.brcond] || conditionColors.Unknown;
+      if (key === "closureSeverity") return d => {
+        const s = closureSeverity(d.properties);
+        return ["#d1d5db", "#fee08b", "#f46d43", "#a50026"][s];
+      };
+      const values = numericValues(points, key);
+      const scale = makeClassScale(values);
+      const colors = selectedColors(scale.range ? scale.range().length : (+value("#classCountInput") || 5));
+      return d => {
+        const v = num(d.properties[key]);
+        if (!Number.isFinite(v)) return "#9ca3af";
+        return colors[scale(v)] || colors[colors.length - 1];
+      };
+    }
+
+    function pointRadiusFunction(points, key) {
+      if (key === "fixed") return () => 3.2;
+      const values = numericValues(points, key);
+      const extent = d3.extent(values);
+      const r = d3.scaleSqrt().domain(extent[0] === extent[1] ? [0, extent[1] || 1] : extent).range([2.5, 10]);
+      return d => r(num(d.properties[key]));
+    }
+
+    function updateLegend(layerMode, countyStyle) {
+      const legend = d3.select("#legend");
+      legend.html("");
+
+      if (layerMode === "county" && countyStyle === "bivariate") {
+        const xLabel = labelForCounty(value("#bivarXSelect"));
+        const yLabel = labelForCounty(value("#bivarYSelect"));
+        legend.append("h3").text(`Bivariate choropleth: ${xLabel} × ${yLabel}`);
+        const grid = legend.append("div").attr("class", "bivar-grid");
+        for (let row = 2; row >= 0; row--) {
+          for (let col = 0; col < 3; col++) {
+            grid.append("div").attr("class", "swatch").style("width", "28px").style("height", "22px").style("background", bivarColors[row][col]);
+          }
+          grid.append("div").text(row === 2 ? `Higher ${yLabel}` : row === 1 ? "Medium" : `Lower ${yLabel}`);
+        }
+        legend.append("div").attr("class", "hint").text(`Left to right: lower to higher ${xLabel}. Bottom to top: lower to higher ${yLabel}.`);
+        return;
+      }
+
+      if (layerMode === "county") {
+        const key = value("#countyVariableSelect");
+        const values = numericValues(state.counties.features, key).sort(d3.ascending);
+        const k = Math.max(3, Math.min(9, +value("#classCountInput") || 5));
+        const colors = selectedColors(k);
+        const labels = classLabels(values, k);
+        legend.append("h3").text(labelForCounty(key));
+        colors.forEach((c, i) => addLegendRow(legend, c, labels[i] || `Class ${i + 1}`));
+        return;
+      }
+
+      const colorKey = value("#pointColorSelect");
+      const sizeKey = value("#pointSizeSelect");
+      legend.append("h3").text("Bridge points");
+      if (colorKey === "brcond") {
+        Object.entries(conditionColors).filter(([k]) => k !== "Unknown").forEach(([k, c]) => addLegendRow(legend, c, k));
+      } else if (colorKey === "closureSeverity") {
+        ["Open in all scenarios", "Closed in 1 scenario", "Closed in 2 scenarios", "Closed in 3 scenarios"].forEach((lab, i) => addLegendRow(legend, ["#d1d5db", "#fee08b", "#f46d43", "#a50026"][i], lab));
+      } else {
+        const points = filteredBridgePoints();
+        const values = numericValues(points, colorKey).sort(d3.ascending);
+        const k = Math.max(3, Math.min(9, +value("#classCountInput") || 5));
+        const colors = selectedColors(k);
+        const labels = classLabels(values, k);
+        colors.forEach((c, i) => addLegendRow(legend, c, labels[i] || `Class ${i + 1}`));
+      }
+
+      if (sizeKey !== "fixed") {
+        const points = filteredBridgePoints();
+        const ex = d3.extent(numericValues(points, sizeKey));
+        const row = legend.append("div").attr("class", "legend-row").style("margin-top", "8px");
+        [4, 8, 12].forEach((s, i) => row.append("span").attr("class", "circle-swatch").style("width", `${s}px`).style("height", `${s}px`));
+        row.append("span").text(`Point size = ${pointLabel(sizeKey)} (${fmt(ex[0])} to ${fmt(ex[1])})`);
+      }
+    }
+
+    function addLegendRow(parent, color, label) {
+      const row = parent.append("div").attr("class", "legend-row");
+      row.append("span").attr("class", "swatch").style("background", color);
+      row.append("span").text(label);
+    }
+
+    function classLabels(values, k) {
+      const clean = values.filter(Number.isFinite).sort(d3.ascending);
+      if (!clean.length) return [];
+      const method = value("#classificationSelect");
+      let breaks;
+      if (method === "manual") {
+        const mids = value("#manualBreaksInput").split(",").map(d => +d.trim()).filter(Number.isFinite).sort(d3.ascending);
+        breaks = [d3.min(clean), ...mids, d3.max(clean)];
+      } else if (method === "equal") {
+        const min = d3.min(clean), max = d3.max(clean), step = (max - min) / k;
+        breaks = d3.range(k + 1).map(i => min + step * i);
+      } else if (method === "jenks") {
+        breaks = jenksBreaks(clean, k);
+      } else {
+        breaks = [d3.min(clean), ...d3.range(1, k).map(i => d3.quantileSorted(clean, i / k)), d3.max(clean)];
+      }
+      return d3.range(breaks.length - 1).map(i => `${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
+    }
+
+    function openHistogram() {
+      const layerMode = value("#layerModeSelect");
+      const key = layerMode === "county" ? value("#countyVariableSelect") : value("#pointColorSelect");
+      if (key === "brcond" || key === "closureSeverity") {
+        alert("Histogram is for numeric fields. Select age, ADT, detour, or a numeric county variable.");
+        return;
+      }
+      const features = layerMode === "county" ? state.counties.features : filteredBridgePoints();
+      const values = numericValues(features, key);
+      drawHistogram(values, layerMode === "county" ? labelForCounty(key) : pointLabel(key));
+      d3.select("#histogramModal").classed("open", true);
+    }
+
+    function drawHistogram(values, title) {
+      const svgH = d3.select("#histogramSvg");
+      svgH.selectAll("*").remove();
+      const width = +svgH.attr("width"), height = +svgH.attr("height");
+      const margin = { top: 20, right: 24, bottom: 48, left: 58 };
+      const clean = values.filter(Number.isFinite);
+      d3.select("#histogramTitle").text(`Histogram: ${title}`);
+      d3.select("#histogramNote").text(`${clean.length.toLocaleString()} valid records. Use this distribution to decide whether equal interval, quantile, natural breaks, or manual classes make sense.`);
+      if (!clean.length) return;
+      const x = d3.scaleLinear().domain(d3.extent(clean)).nice().range([margin.left, width - margin.right]);
+      const bins = d3.bin().domain(x.domain()).thresholds(24)(clean);
+      const y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice().range([height - margin.bottom, margin.top]);
+      svgH.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(8));
+      svgH.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(6));
+      svgH.selectAll("rect")
+        .data(bins)
+        .join("rect")
+        .attr("x", d => x(d.x0) + 1)
+        .attr("y", d => y(d.length))
+        .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
+        .attr("height", d => y(0) - y(d.length))
+        .attr("fill", "#527da1");
+      svgH.append("text").attr("x", width / 2).attr("y", height - 8).attr("text-anchor", "middle").attr("font-size", 12).text(title);
+      svgH.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("y", 16).attr("text-anchor", "middle").attr("font-size", 12).text("Count");
+    }
+
+    function openStats() {
+      const county = state.selectedCounty || value("#pointCountySelect");
+      if (!county) {
+        alert("Select or click a county first.");
+        return;
+      }
+      const points = state.bridges.features.filter(d => d.properties.brcounty === county);
+      d3.select("#statsTitle").text(`${county} County bridge statistics`);
+      drawBarChart("#conditionChart", rollupCounts(points, d => d.properties.brcond), conditionColors);
+      drawBarChart("#structureChart", rollupCounts(points, d => d.properties.brstr));
+      drawHistogramSmall("#ageChart", numericValues(points, "brage"));
+      drawScenarioChart("#closureChart", points);
+      d3.select("#statsModal").classed("open", true);
+    }
+
+    function drawBarChart(selector, dataMap, colorMap = null) {
+      const s = d3.select(selector); s.selectAll("*").remove();
+      const width = +s.attr("width"), height = +s.attr("height");
+      const margin = { top: 8, right: 12, bottom: 56, left: 46 };
+      const data = Array.from(dataMap, ([key, value]) => ({ key, value })).sort((a,b) => d3.descending(a.value, b.value));
+      const x = d3.scaleBand().domain(data.map(d => d.key)).range([margin.left, width - margin.right]).padding(0.25);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) || 1]).nice().range([height - margin.bottom, margin.top]);
+      s.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-28)").style("text-anchor", "end").style("font-size", "10px");
+      s.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5));
+      s.selectAll("rect").data(data).join("rect")
+        .attr("x", d => x(d.key)).attr("y", d => y(d.value))
+        .attr("width", x.bandwidth()).attr("height", d => y(0) - y(d.value))
+        .attr("fill", d => colorMap && colorMap[d.key] ? colorMap[d.key] : "#527da1");
+    }
+
+    function drawHistogramSmall(selector, values) {
+      const s = d3.select(selector); s.selectAll("*").remove();
+      const width = +s.attr("width"), height = +s.attr("height");
+      const margin = { top: 8, right: 12, bottom: 34, left: 44 };
+      const clean = values.filter(Number.isFinite);
+      if (!clean.length) return;
+      const x = d3.scaleLinear().domain(d3.extent(clean)).nice().range([margin.left, width - margin.right]);
+      const bins = d3.bin().domain(x.domain()).thresholds(12)(clean);
+      const y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice().range([height - margin.bottom, margin.top]);
+      s.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(5));
+      s.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(4));
+      s.selectAll("rect").data(bins).join("rect")
+        .attr("x", d => x(d.x0) + 1).attr("y", d => y(d.length))
+        .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1)).attr("height", d => y(0) - y(d.length))
+        .attr("fill", "#527da1");
+    }
+
+    function drawScenarioChart(selector, points) {
+      const data = [
+        { key: "50-year", value: points.filter(d => d.properties.br50).length },
+        { key: "100-year", value: points.filter(d => d.properties.br100).length },
+        { key: "500-year", value: points.filter(d => d.properties.br500).length }
+      ];
+      drawBarChart(selector, new Map(data.map(d => [d.key, d.value])));
+    }
+
+    function updateSummaryCards() {
+      const container = d3.select("#summaryCards");
+      container.html("");
+      const layerMode = value("#layerModeSelect");
+      const county = state.selectedCounty || value("#pointCountySelect");
+      let points = layerMode === "point" ? filteredBridgePoints() : state.bridges.features;
+      if (county) points = state.bridges.features.filter(d => d.properties.brcounty === county);
+      const closed500 = points.filter(d => d.properties.br500).length;
+      const poor = points.filter(d => d.properties.brcond === "Poor").length;
+      const avgAge = d3.mean(points, d => num(d.properties.brage));
+      const cards = [
+        [points.length.toLocaleString(), county ? `${county} bridges` : "Displayed bridges"],
+        [poor.toLocaleString(), "Poor-condition bridges"],
+        [closed500.toLocaleString(), "Closed under 500-year scenario"],
+        [fmt(avgAge), "Average bridge age"]
+      ];
+      cards.forEach(([v, lab]) => {
+        const card = container.append("div").attr("class", "metric-card");
+        card.append("strong").text(v);
+        card.append("span").text(lab);
+      });
+    }
+
+    function showCountyTooltip(event, d) {
+      const p = d.properties;
+      tooltip.style("opacity", 1)
+        .style("left", `${event.clientX}px`)
+        .style("top", `${event.clientY}px`)
+        .html(`<strong>${p.CountyName} County</strong><br>Total bridges: ${fmt(p.Bridge)}<br>Poor bridges: ${fmt(p.br_poor)} (${fmt(p.br_poorper)}%)<br>Avg. age: ${fmt(p.br_age)} years<br>500-year closure: ${fmt(p.fd_500)} (${fmt(p.fd_500per)}%)`);
+    }
+
+    function showBridgeTooltip(event, d) {
+      const p = d.properties;
+      tooltip.style("opacity", 1)
+        .style("left", `${event.clientX}px`)
+        .style("top", `${event.clientY}px`)
+        .html(`<strong>Bridge ${p.brid}</strong><br>${p.brcounty} County<br>Condition: ${p.brcond}<br>Age: ${fmt(p.brage)} years<br>ADT: ${fmt(p.bradt)}<br>Detour: ${fmt(p.brdetour)} mi<br>Closure: 50=${yesno(p.br50)}, 100=${yesno(p.br100)}, 500=${yesno(p.br500)}`);
+    }
+
+    function hideTooltip() { tooltip.style("opacity", 0); }
+
+    function zoomToFeature(feature) {
+      const [[x0, y0], [x1, y1]] = state.path.bounds(feature);
+      const main = document.querySelector("main");
+      const width = main.clientWidth, height = main.clientHeight;
+      const dx = x1 - x0, dy = y1 - y0;
+      const x = (x0 + x1) / 2, y = (y0 + y1) / 2;
+      const scale = Math.max(1, Math.min(12, 0.82 / Math.max(dx / width, dy / height)));
+      const translate = [width / 2 - scale * x, height / 2 - scale * y];
+      svg.transition().duration(650).call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+    }
+
+    function filteredBridgePoints() {
+      const county = value("#pointCountySelect");
+      return state.bridges.features.filter(d => !county || d.properties.brcounty === county);
+    }
+
+    function numericValues(features, key) {
+      return features.map(d => num(d.properties[key])).filter(Number.isFinite);
+    }
+
+    function num(v) {
+      const n = +v;
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function value(selector) { return document.querySelector(selector).value; }
+
+    function fmt(v) {
+      if (!Number.isFinite(+v)) return "--";
+      const n = +v;
+      return Math.abs(n) >= 1000 ? d3.format(",.0f")(n) : d3.format(".2~f")(n);
+    }
+
+    function yesno(v) { return v ? "closed" : "open"; }
+
+    function closureSeverity(p) { return [p.br50, p.br100, p.br500].filter(Boolean).length; }
+
+    function labelForCounty(key) {
+      return (countyVariables.find(d => d.key === key) || { label: key }).label;
+    }
+
+    function pointLabel(key) {
+      return ({ brage: "Bridge age", bradt: "ADT", brdetour: "Detour length", closureSeverity: "Closure severity", brcond: "Condition" })[key] || key;
+    }
+
+    function rollupCounts(features, accessor) {
+      return d3.rollup(features, v => v.length, accessor);
+    }
+
+    function jenksBreaks(data, nClasses) {
+      const values = [...new Set(data.filter(Number.isFinite).sort(d3.ascending))];
+      const n = values.length;
+      if (nClasses <= 1 || n === 0) return values.length ? [values[0], values[n - 1]] : [0, 1];
+      if (nClasses >= n) return values;
+
+      const lower = Array.from({ length: n + 1 }, () => Array(nClasses + 1).fill(0));
+      const variance = Array.from({ length: n + 1 }, () => Array(nClasses + 1).fill(0));
+
+      for (let i = 1; i <= nClasses; i++) {
+        lower[1][i] = 1;
+        variance[1][i] = 0;
+        for (let j = 2; j <= n; j++) variance[j][i] = Infinity;
+      }
+
+      for (let l = 2; l <= n; l++) {
+        let sum = 0, sumSquares = 0, w = 0;
+        for (let m = 1; m <= l; m++) {
+          const i3 = l - m + 1;
+          const val = values[i3 - 1];
+          w++;
+          sum += val;
+          sumSquares += val * val;
+          const v = sumSquares - (sum * sum) / w;
+          const i4 = i3 - 1;
+          if (i4 !== 0) {
+            for (let j = 2; j <= nClasses; j++) {
+              if (variance[l][j] >= v + variance[i4][j - 1]) {
+                lower[l][j] = i3;
+                variance[l][j] = v + variance[i4][j - 1];
+              }
+            }
+          }
+        }
+        lower[l][1] = 1;
+        variance[l][1] = sumSquares - (sum * sum) / w;
+      }
+
+      const breaks = Array(nClasses + 1).fill(0);
+      breaks[nClasses] = values[n - 1];
+      breaks[0] = values[0];
+      let k = n;
+      for (let j = nClasses; j > 1; j--) {
+        const id = lower[k][j] - 2;
+        breaks[j - 1] = values[Math.max(0, id)];
+        k = lower[k][j] - 1;
+      }
+      return breaks;
+    }
+  </script>
+</body>
+</html>
