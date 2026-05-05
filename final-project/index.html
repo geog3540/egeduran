@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Geovisualization of Iowa Bridge Infrastructure</title>
+  <title>Interactive Geovisualization of Iowa Bridge Network</title>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     :root {
@@ -51,18 +51,18 @@
 
     .title-block h1 {
       margin: 0;
-      font-size: 19px;
+      font-size: 18px;
       letter-spacing: 0.2px;
       white-space: nowrap;
     }
 
     .top-controls {
       display: grid;
-      grid-template-columns: 128px 92px 138px minmax(255px, 1fr) 118px;
+      grid-template-columns: 128px 78px 138px minmax(360px, 1fr) 138px;
       gap: 8px;
       align-items: end;
       flex: 1;
-      max-width: 915px;
+      max-width: 960px;
     }
 
     aside {
@@ -114,6 +114,17 @@
       font-size: 13px;
     }
 
+    input[type=number] {
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
     button {
       cursor: pointer;
       background: var(--accent);
@@ -122,6 +133,10 @@
       font-weight: 700;
       transition: 120ms ease;
     }
+
+    button { white-space: nowrap; }
+
+    #histogramBtn { min-width: 138px; padding-left: 10px; padding-right: 10px; }
 
     button:hover { background: var(--accent-dark); }
 
@@ -449,18 +464,36 @@
 
     .manual-boxes {
       display: flex;
-      align-items: center;
-      gap: 4px;
+      align-items: flex-end;
+      gap: 3px;
       flex-wrap: nowrap;
       overflow-x: auto;
       padding-bottom: 1px;
     }
 
-    .manual-boxes input {
-      padding: 6px 5px;
-      font-size: 12px;
-      width: 54px;
-      min-width: 54px;
+    .manual-entry {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+
+    .manual-cap {
+      height: 13px;
+      line-height: 12px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #344054;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+
+    .manual-entry input {
+      padding: 5px 4px;
+      font-size: 11px;
+      width: 66px;
+      min-width: 66px;
+      height: 31px;
       text-align: center;
     }
 
@@ -468,9 +501,10 @@
       font-size: 13px;
       color: var(--muted);
       flex: 0 0 auto;
+      padding-bottom: 8px;
     }
 
-    .manual-boxes input[readonly] {
+    .manual-entry input[readonly] {
       background: #eef2f7;
       color: #667085;
       font-weight: 700;
@@ -488,7 +522,7 @@
   <div id="app">
     <header>
       <div class="title-block">
-        <h1>Interactive Geovisualization of Iowa Bridge Infrastructure</h1>
+        <h1>Interactive Geovisualization of Iowa Bridge Network</h1>
       </div>
 
       <div class="top-controls">
@@ -502,7 +536,7 @@
           </select>
         </div>
         <div>
-          <label for="classCountInput">Class number</label>
+          <label for="classCountInput">Classes</label>
           <input id="classCountInput" type="number" min="3" max="9" value="5" />
         </div>
         <div>
@@ -516,7 +550,6 @@
           </select>
         </div>
         <div class="manual-wrap" id="manualBreakWrap">
-          <label>Manual<br>class limits</label>
           <div id="manualBreakBoxes" class="manual-boxes"></div>
         </div>
         <div>
@@ -1055,7 +1088,11 @@
 
       wrap.html("");
       entries.forEach((d, i) => {
-        wrap.append("input")
+        const entry = wrap.append("div").attr("class", "manual-entry");
+        entry.append("div")
+          .attr("class", "manual-cap")
+          .text(i === 0 ? "Low" : i === entries.length - 1 ? "High" : "");
+        entry.append("input")
           .attr("type", "number")
           .attr("step", "any")
           .attr("title", d.label)
