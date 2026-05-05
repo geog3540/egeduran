@@ -258,15 +258,15 @@
 
     .bivar-grid-wrap {
       display: grid;
-      grid-template-columns: 18px repeat(3, 30px);
-      grid-template-rows: repeat(3, 24px) 18px;
+      grid-template-columns: 28px repeat(3, 34px);
+      grid-template-rows: repeat(3, 28px) 34px;
       gap: 2px;
       align-items: center;
     }
 
     .bivar-grid {
       display: contents;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .bivar-y-axis {
@@ -274,19 +274,25 @@
       grid-column: 1;
       writing-mode: vertical-rl;
       transform: rotate(180deg);
-      font-size: 11px;
+      font-size: 12px;
+      line-height: 1.05;
       color: var(--muted);
       text-align: center;
-      white-space: nowrap;
+      white-space: normal;
+    }
+
+    .bivar-y-axis span, .bivar-x-axis span {
+      display: block;
     }
 
     .bivar-x-axis {
       grid-column: 2 / 5;
       grid-row: 4;
-      font-size: 11px;
+      font-size: 12px;
+      line-height: 1.05;
       color: var(--muted);
       text-align: center;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     .bivar-intervals {
@@ -370,7 +376,8 @@
       height: 100%;
       z-index: 3;
       pointer-events: none;
-      opacity: 0.72;
+      opacity: 0.88;
+      mix-blend-mode: multiply;
     }
 
     .modal {
@@ -436,13 +443,14 @@
 
     .manual-boxes {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(2, minmax(104px, 1fr));
+      gap: 7px;
     }
 
     .manual-boxes input {
-      padding: 7px 6px;
+      padding: 8px 7px;
       font-size: 12px;
+      min-width: 104px;
     }
 
     .manual-boxes input[readonly] {
@@ -839,17 +847,24 @@
       let classification = value("#classificationSelect");
       const countyStyle = value("#countyStyleSelect");
       const layerMode = value("#layerModeSelect");
+      const pointColor = value("#pointColorSelect");
       const isBivar = countyStyle === "bivariate" && layerMode === "county";
+      const isCategoricalPoint = layerMode === "point" && (pointColor === "brcond" || pointColor === "closureSeverity");
 
-      d3.select('#classificationSelect option[value="manual"]').property("disabled", isBivar);
-      if (isBivar && classification === "manual") {
+      d3.select('#classificationSelect option[value="manual"]').property("disabled", isBivar || isCategoricalPoint);
+
+      if ((isBivar || isCategoricalPoint) && classification === "manual") {
         d3.select("#classificationSelect").property("value", "quantile");
         classification = "quantile";
       }
 
-      d3.select("#manualBreakWrap").classed("active", classification === "manual" && !isBivar);
+      d3.select("#classificationSelect").property("disabled", isCategoricalPoint);
+      d3.select("#classCountInput").property("disabled", isBivar || isCategoricalPoint);
+      d3.select("#colorSchemeSelect").property("disabled", isCategoricalPoint);
+      d3.select("#histogramBtn").property("disabled", isCategoricalPoint);
+
+      d3.select("#manualBreakWrap").classed("active", classification === "manual" && !isBivar && !isCategoricalPoint);
       d3.select("#bivarControls").classed("active", isBivar);
-      d3.select("#classCountInput").property("disabled", isBivar);
       d3.select("#heatmapControls").classed("active", layerMode === "point");
 
       populateColorSchemeOptions(isBivar ? "bivariate" : "single");
@@ -985,9 +1000,16 @@
       return { key, values: numericValues(features, key) };
     }
 
+    function manualNumber(v) {
+      return Number.isFinite(+v) ? d3.format(".8~g")(+v) : "";
+    }
+
     function updateManualBreakBoxes() {
       const wrap = d3.select("#manualBreakBoxes");
-      if (!wrap.node() || value("#classificationSelect") !== "manual") {
+      const layerMode = value("#layerModeSelect");
+      const pointColor = value("#pointColorSelect");
+      const isCategoricalPoint = layerMode === "point" && (pointColor === "brcond" || pointColor === "closureSeverity");
+      if (!wrap.node() || value("#classificationSelect") !== "manual" || isCategoricalPoint) {
         wrap.html("");
         return;
       }
@@ -1000,26 +1022,33 @@
       const k = Math.max(2, Math.min(9, +value("#classCountInput") || 5));
       const min = d3.min(clean);
       const max = d3.max(clean);
-      const oldMid = wrap.selectAll("input.manual-mid").nodes().map(n => +n.value).filter(Number.isFinite);
+      const oldMid = wrap.selectAll("input.manual-mid").nodes()
+        .map(n => +String(n.value).replace(/,/g, ""))
+        .filter(Number.isFinite);
       const defaults = d3.range(1, k).map(i => min + (max - min) * i / k);
-      const entries = d3.range(k + 1).map(i => ({
-        index: i,
-        value: i === 0 ? min : i === k ? max : (oldMid[i - 1] ?? defaults[i - 1]),
-        fixed: i === 0 || i === k
-      }));
+      const midValues = defaults.map((d, i) => {
+        const old = oldMid[i];
+        return Number.isFinite(old) && old > min && old < max ? old : d;
+      });
+      const entries = [
+        { index: 0, value: min, fixed: true, label: "min" },
+        ...midValues.map((v, i) => ({ index: i + 1, value: v, fixed: false, label: `break ${i + 1}` })),
+        { index: k, value: max, fixed: true, label: "max" }
+      ];
       const boxes = wrap.selectAll("input").data(entries, d => d.index);
       boxes.join("input")
         .attr("type", "number")
         .attr("step", "any")
+        .attr("title", d => d.label)
         .attr("class", d => d.fixed ? "manual-fixed" : "manual-mid")
         .property("readonly", d => d.fixed)
-        .property("value", d => fmt(d.value))
+        .property("value", d => manualNumber(d.value))
         .on("input", render);
     }
 
     function parsedManualBreaks() {
       return d3.selectAll("#manualBreakBoxes input.manual-mid").nodes()
-        .map(d => +d.value)
+        .map(d => +String(d.value).replace(/,/g, ""))
         .filter(Number.isFinite)
         .sort(d3.ascending);
     }
@@ -1036,15 +1065,12 @@
 
       if (method === "manual" && !forcedClassCount) {
         const targetBreaks = Math.max(1, desiredK - 1);
-        let breaks = parsedManualBreaks()
-          .filter(d => d > min && d < max)
-          .sort(d3.ascending)
-          .slice(0, targetBreaks);
-        if (breaks.length !== targetBreaks) {
-          const step = (max - min) / desiredK;
-          breaks = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
-        }
-        return { breaks, classCount: desiredK, min, max };
+        const step = (max - min) / desiredK;
+        const defaults = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
+        const typed = parsedManualBreaks().filter(d => d > min && d < max).sort(d3.ascending);
+        let breaks = d3.range(targetBreaks).map(i => Number.isFinite(typed[i]) ? typed[i] : defaults[i]);
+        breaks = breaks.filter(Number.isFinite).filter(d => d > min && d < max).sort(d3.ascending);
+        return { breaks, classCount: breaks.length + 1, min, max };
       }
 
       if (method === "equal") {
@@ -1149,12 +1175,14 @@
 
         const wrap = legend.append("div")
           .style("display", "grid")
-          .style("grid-template-columns", "128px max-content")
+          .style("grid-template-columns", "142px max-content")
           .style("gap", "14px")
           .style("align-items", "start");
 
         const gridWrap = wrap.append("div").attr("class", "bivar-grid-wrap");
-        gridWrap.append("div").attr("class", "bivar-y-axis").text(`Low → High ${yLabel}`);
+        gridWrap.append("div")
+          .attr("class", "bivar-y-axis")
+          .html(`<span>Low ───→ High</span><span>${shortAxisLabel(yKey)}</span>`);
         const grid = gridWrap.append("div").attr("class", "bivar-grid");
         for (let row = 2; row >= 0; row--) {
           for (let col = 0; col < 3; col++) {
@@ -1162,19 +1190,21 @@
               .attr("class", "swatch")
               .style("grid-column", col + 2)
               .style("grid-row", 3 - row)
-              .style("width", "30px")
-              .style("height", "24px")
+              .style("width", "34px")
+              .style("height", "28px")
               .style("background", colors[row][col]);
           }
         }
-        gridWrap.append("div").attr("class", "bivar-x-axis").text(`Low → High ${xLabel}`);
+        gridWrap.append("div")
+          .attr("class", "bivar-x-axis")
+          .html(`<span>Low ───→ High</span><span>${shortAxisLabel(xKey)}</span>`);
 
         const xLabels = classLabels(numericValues(state.counties.features, xKey), 3);
         const yLabels = classLabels(numericValues(state.counties.features, yKey), 3);
         const intervals = wrap.append("div").attr("class", "bivar-intervals");
-        intervals.append("strong").text(`${xLabel}`);
+        intervals.append("strong").text(shortAxisLabel(xKey));
         xLabels.forEach((d, i) => intervals.append("div").text(`X${i + 1}: ${d}`));
-        intervals.append("strong").style("margin-top", "7px").text(`${yLabel}`);
+        intervals.append("strong").style("margin-top", "7px").text(shortAxisLabel(yKey));
         yLabels.forEach((d, i) => intervals.append("div").text(`Y${i + 1}: ${d}`));
         return;
       }
@@ -1366,34 +1396,67 @@
       heatCtx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
     }
 
+    function heatColor(t) {
+      t = Math.max(0, Math.min(1, t));
+      if (t < 0.48) {
+        const k = t / 0.48;
+        return [0 + 255 * k, 165 + 55 * k, 0];
+      }
+      const k = (t - 0.48) / 0.52;
+      return [255, 220 * (1 - k), 0];
+    }
+
     function drawHeatmap() {
       clearHeatmap();
       if (value("#layerModeSelect") !== "point" || value("#heatmapToggle") !== "on") return;
       const points = filteredBridgePoints();
       if (!points.length || !state.projection) return;
-      const radiusValue = value("#heatmapRadiusSelect");
-      const radius = radiusValue === "low" ? 34 : radiusValue === "high" ? 105 : 62;
 
-      heatCtx.save();
-      heatCtx.globalCompositeOperation = "source-over";
-      heatCtx.globalAlpha = 0.82;
+      const radiusValue = value("#heatmapRadiusSelect");
+      const radius = radiusValue === "low" ? 85 : radiusValue === "high" ? 210 : 135;
+      const weight = radiusValue === "low" ? 0.18 : radiusValue === "high" ? 0.30 : 0.24;
+
+      const off = document.createElement("canvas");
+      off.width = heatCanvas.width;
+      off.height = heatCanvas.height;
+      const ctx = off.getContext("2d", { willReadFrequently: true });
+      ctx.clearRect(0, 0, off.width, off.height);
+      ctx.globalCompositeOperation = "lighter";
+
       for (const d of points) {
         const projected = state.projection(d.geometry.coordinates);
         if (!projected) continue;
         const x = state.transform.applyX(projected[0]);
         const y = state.transform.applyY(projected[1]);
-        if (x < -radius || y < -radius || x > heatCanvas.width + radius || y > heatCanvas.height + radius) continue;
-        const grad = heatCtx.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0.00, "rgba(220,0,0,0.82)");
-        grad.addColorStop(0.34, "rgba(255,220,0,0.62)");
-        grad.addColorStop(0.72, "rgba(0,170,0,0.42)");
-        grad.addColorStop(1.00, "rgba(0,170,0,0)");
-        heatCtx.fillStyle = grad;
-        heatCtx.beginPath();
-        heatCtx.arc(x, y, radius, 0, Math.PI * 2);
-        heatCtx.fill();
+        if (x < -radius || y < -radius || x > off.width + radius || y > off.height + radius) continue;
+
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        grad.addColorStop(0.00, `rgba(0,0,0,${weight})`);
+        grad.addColorStop(0.42, `rgba(0,0,0,${weight * 0.45})`);
+        grad.addColorStop(1.00, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
       }
-      heatCtx.restore();
+
+      const img = ctx.getImageData(0, 0, off.width, off.height);
+      const data = img.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        if (a < 5) {
+          data[i + 3] = 0;
+          continue;
+        }
+        const t = Math.pow(a / 255, 0.72);
+        const [r, g, b] = heatColor(t);
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+        data[i + 3] = Math.min(235, 35 + a * 1.25);
+      }
+      heatCtx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
+      heatCtx.putImageData(img, 0, 0);
     }
 
 
@@ -1500,6 +1563,29 @@
 
     function labelForCounty(key) {
       return (countyVariables.find(d => d.key === key) || { label: key }).label;
+    }
+
+    function shortAxisLabel(key) {
+      const labels = {
+        Bridge: "Bridges",
+        Population: "Population",
+        br_age: "Age",
+        br_poor: "Poor count",
+        br_poorper: "Poor (%)",
+        fd_50: "50-yr count",
+        fd_100: "100-yr count",
+        fd_500: "500-yr count",
+        fd_50per: "50-yr (%)",
+        fd_100per: "100-yr (%)",
+        fd_500per: "500-yr (%)",
+        fd_50adt: "50-yr ADT",
+        fd_100adt: "100-yr ADT",
+        fd_500adt: "500-yr ADT",
+        fd_50detav: "50-yr detour",
+        fd_100detav: "100-yr detour",
+        fd_500detav: "500-yr detour"
+      };
+      return labels[key] || labelForCounty(key);
     }
 
     function pointLabel(key) {
