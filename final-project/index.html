@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Iowa Bridge Geovisualization Prototype</title>
+  <title>Iowa Bridge Atlas</title>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     :root {
@@ -63,7 +63,7 @@
 
     .top-controls {
       display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 160px));
+      grid-template-columns: repeat(5, minmax(115px, 155px));
       gap: 8px;
       align-items: end;
       flex: 1;
@@ -220,14 +220,14 @@
       position: absolute;
       right: 22px;
       bottom: 22px;
-      min-width: 310px;
-      max-width: 640px;
+      min-width: 350px;
+      max-width: 720px;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 12px;
       box-shadow: var(--shadow);
       padding: 12px 14px;
-      z-index: 3;
+      z-index: 6;
     }
 
     #legend h3 {
@@ -261,11 +261,37 @@
 
     .bivar-grid {
       display: grid;
-      grid-template-columns: repeat(3, 28px) 1fr;
-      grid-template-rows: repeat(3, 22px);
+      grid-template-columns: repeat(3, 30px) 78px;
+      grid-template-rows: repeat(3, 24px);
       gap: 2px 8px;
       align-items: center;
       font-size: 11px;
+    }
+
+    .bivar-intervals {
+      font-size: 11px;
+      line-height: 1.35;
+      max-height: 170px;
+      overflow: auto;
+      padding-left: 2px;
+    }
+
+    .bivar-intervals strong {
+      display: block;
+      margin: 0 0 3px 0;
+    }
+
+    .size-legend-row {
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .size-symbols {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 78px;
     }
 
     .north-arrow {
@@ -321,8 +347,9 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: 1;
+      z-index: 3;
       pointer-events: none;
+      opacity: 0.72;
     }
 
     .modal {
@@ -398,8 +425,8 @@
   <div id="app">
     <header>
       <div class="title-block">
-        <h1>Iowa Bridge Viewer</h1>
-        <p>County summaries, bridge points, classification, histograms, and linked statistics.</p>
+        <h1>Iowa Bridge Atlas</h1>
+        <p>County summaries, bridge points, classification, histograms, heatmaps, and linked statistics.</p>
       </div>
 
       <div class="top-controls">
@@ -504,8 +531,9 @@
 
       <div class="panel-section">
         <h2>Statistics</h2>
-        <button id="statsBtn" type="button" class="secondary">Open raw statistics</button>
-        <p class="hint">Statistics are generated from the selected county in point mode, or from the selected/clicked county in county mode.</p>
+        <button id="statsBtn" type="button" class="secondary">Open selected county statistics</button>
+        <button id="statsIowaBtn" type="button" class="secondary" style="margin-top:8px;">Open Iowa statistics</button>
+        <p class="hint">County statistics use the selected/clicked county. Iowa statistics summarize all bridge records statewide.</p>
       </div>
 
       <div id="summaryCards"></div>
@@ -604,31 +632,35 @@
       purples: { label: "Purples", colors: d3.schemePurples[9] },
       reds: { label: "Reds", colors: d3.schemeReds[9] },
       greys: { label: "Greys", colors: d3.schemeGreys[9] },
-      ylOrRd: { label: "Yellow → Orange → Red", colors: d3.schemeYlOrRd[9] },
-      ylGnBu: { label: "Yellow → Green → Blue", colors: d3.schemeYlGnBu[9] },
-      gnBu: { label: "Green → Blue", colors: d3.schemeGnBu[9] },
-      buGn: { label: "Blue → Green", colors: d3.schemeBuGn[9] },
-      puBuGn: { label: "Purple → Blue → Green", colors: d3.schemePuBuGn[9] },
-      orRd: { label: "Orange → Red", colors: d3.schemeOrRd[9] },
-      rdPu: { label: "Red → Purple", colors: d3.schemeRdPu[9] },
-      greenYellowRed: { label: "Green → Yellow → Red", colors: [...d3.schemeRdYlGn[9]].reverse() }
+      ylOrRd: { label: "YlOrRd", colors: d3.schemeYlOrRd[9] },
+      ylGnBu: { label: "YlGnBu", colors: d3.schemeYlGnBu[9] },
+      ylGn: { label: "YlGn", colors: d3.schemeYlGn[9] },
+      gnBu: { label: "GnBu", colors: d3.schemeGnBu[9] },
+      buGn: { label: "BuGn", colors: d3.schemeBuGn[9] },
+      buPu: { label: "BuPu", colors: d3.schemeBuPu[9] },
+      puBuGn: { label: "PuBuGn", colors: d3.schemePuBuGn[9] },
+      puBu: { label: "PuBu", colors: d3.schemePuBu[9] },
+      orRd: { label: "OrRd", colors: d3.schemeOrRd[9] },
+      rdPu: { label: "RdPu", colors: d3.schemeRdPu[9] },
+      puRd: { label: "PuRd", colors: d3.schemePuRd[9] },
+      rdYlGnReverse: { label: "RdYlGn reversed", colors: [...d3.schemeRdYlGn[9]].reverse() }
     };
 
     const bivarSchemes = {
       stevensPurpleBlue: {
-        label: "Purple / Blue 3×3",
+        label: "PurpleBlue 3×3",
         colors: [["#e8e8e8", "#dfb0d6", "#be64ac"], ["#ace4e4", "#a5add3", "#8c62aa"], ["#5ac8c8", "#5698b9", "#3b4994"]]
       },
       blueOrange: {
-        label: "Blue / Orange 3×3",
+        label: "BlueOrange 3×3",
         colors: [["#f7f7f7", "#fddbc7", "#ef8a62"], ["#d1e5f0", "#f4a582", "#ca0020"], ["#67a9cf", "#2166ac", "#053061"]]
       },
       greenBrown: {
-        label: "Green / Brown 3×3",
+        label: "GreenBrown 3×3",
         colors: [["#f5f5f5", "#dfc27d", "#a6611a"], ["#c7eae5", "#80cdc1", "#bf812d"], ["#35978f", "#01665e", "#003c30"]]
       },
       yellowRedBlue: {
-        label: "Yellow-Red / Blue 3×3",
+        label: "YlOrRdBu 3×3",
         colors: [["#ffffcc", "#fd8d3c", "#bd0026"], ["#c7e9b4", "#41b6c4", "#225ea8"], ["#7fcdbb", "#1d91c0", "#0c2c84"]]
       }
     };
@@ -725,10 +757,13 @@
 
       d3.select("#pointCountySelect")
         .selectAll("option")
-        .data(["All counties", ...countyOptions])
+        .data(countyOptions)
         .join("option")
-        .attr("value", d => d === "All counties" ? "" : d)
+        .attr("value", d => d)
         .text(d => d);
+
+      state.selectedCounty = countyOptions[0] || null;
+      d3.select("#pointCountySelect").property("value", state.selectedCounty);
 
       d3.select("#bivarXSelect")
         .selectAll("option")
@@ -756,7 +791,8 @@
       });
 
       d3.select("#histogramBtn").on("click", openHistogram);
-      d3.select("#statsBtn").on("click", openStats);
+      d3.select("#statsBtn").on("click", () => openStats(false));
+      d3.select("#statsIowaBtn").on("click", () => openStats(true));
 
       d3.selectAll("[data-close]").on("click", function() {
         d3.select("#" + this.dataset.close).classed("open", false);
@@ -814,6 +850,11 @@
       const countyStyle = value("#countyStyleSelect");
       const selectedCountyFromDropdown = value("#pointCountySelect");
       if (selectedCountyFromDropdown) state.selectedCounty = selectedCountyFromDropdown;
+      if (layerMode === "point" && !state.selectedCounty) {
+        const firstCounty = state.counties.features.map(d => d.properties.CountyName).sort(d3.ascending)[0];
+        state.selectedCounty = firstCounty;
+        d3.select("#pointCountySelect").property("value", firstCounty);
+      }
 
       drawCounties(layerMode, countyStyle);
       drawPoints(layerMode);
@@ -885,49 +926,68 @@
         .on("mouseleave", hideTooltip);
     }
 
-    function makeClassScale(values, forcedClassCount = null) {
+    function parsedManualBreaks() {
+      return value("#manualBreaksInput")
+        .split(",")
+        .map(d => +d.trim())
+        .filter(Number.isFinite)
+        .sort(d3.ascending);
+    }
+
+    function breaksForValues(values, forcedClassCount = null) {
       const clean = values.filter(Number.isFinite).sort(d3.ascending);
+      if (!clean.length) return { breaks: [], classCount: 1, min: NaN, max: NaN };
+
       const method = value("#classificationSelect");
-      const k = forcedClassCount || Math.max(3, Math.min(9, +value("#classCountInput") || 5));
-
-      // This returns a function, but it also carries class metadata.
-      // The earlier version called scale.range(), which only exists on D3 scale objects.
-      // Our classifier is a plain function, so we attach a compatible range() method here.
-      function classifierFromBreaks(breaks, classCount) {
-        const f = d => Math.max(0, Math.min(classCount - 1, d3.bisectRight(breaks, d)));
-        f.breaks = breaks;
-        f.classCount = classCount;
-        f.range = () => d3.range(classCount);
-        return f;
-      }
-
-      if (!clean.length) return classifierFromBreaks([], 1);
+      const desiredK = forcedClassCount || Math.max(2, Math.min(9, +value("#classCountInput") || 5));
+      const min = d3.min(clean);
+      const max = d3.max(clean);
 
       if (method === "manual" && !forcedClassCount) {
-        const breaks = value("#manualBreaksInput")
-          .split(",")
-          .map(d => +d.trim())
-          .filter(Number.isFinite)
-          .sort(d3.ascending);
-        return classifierFromBreaks(breaks, Math.max(1, breaks.length + 1));
+        const targetBreaks = Math.max(1, desiredK - 1);
+        let breaks = parsedManualBreaks()
+          .filter(d => d > min && d < max)
+          .slice(0, targetBreaks);
+
+        // If the user has not supplied enough manual intervals, fill the rest
+        // with equal-interval candidates so the selected class number still works.
+        if (breaks.length < targetBreaks) {
+          const step = (max - min) / desiredK;
+          const auto = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
+          breaks = [...breaks, ...auto]
+            .filter(d => d > min && d < max)
+            .sort(d3.ascending)
+            .filter((d, i, arr) => i === 0 || Math.abs(d - arr[i - 1]) > 1e-9)
+            .slice(0, targetBreaks);
+        }
+        return { breaks, classCount: breaks.length + 1, min, max };
       }
 
       if (method === "equal") {
-        const min = d3.min(clean), max = d3.max(clean);
-        const step = (max - min) / k;
-        const breaks = step === 0 ? [] : d3.range(1, k).map(i => min + step * i);
-        return classifierFromBreaks(breaks, breaks.length + 1);
+        const step = (max - min) / desiredK;
+        const breaks = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
+        return { breaks, classCount: breaks.length + 1, min, max };
       }
 
       if (method === "jenks") {
-        const breaks = jenksBreaks(clean, k).slice(1, -1);
-        return classifierFromBreaks(breaks, breaks.length + 1);
+        const breaks = jenksBreaks(clean, desiredK).slice(1, -1);
+        return { breaks, classCount: breaks.length + 1, min, max };
       }
 
-      const quantiles = d3.range(1, k)
-        .map(i => d3.quantileSorted(clean, i / k))
+      const breaks = d3.range(1, desiredK)
+        .map(i => d3.quantileSorted(clean, i / desiredK))
         .filter((d, i, arr) => Number.isFinite(d) && (i === 0 || d !== arr[i - 1]));
-      return classifierFromBreaks(quantiles, quantiles.length + 1);
+      return { breaks, classCount: breaks.length + 1, min, max };
+    }
+
+    function makeClassScale(values, forcedClassCount = null) {
+      const info = breaksForValues(values, forcedClassCount);
+      const f = d => Math.max(0, Math.min(info.classCount - 1, d3.bisectRight(info.breaks, d)));
+      f.breaks = info.breaks;
+      f.classCount = info.classCount;
+      f.min = info.min;
+      f.max = info.max;
+      return f;
     }
 
     function selectedColors(n) {
@@ -973,11 +1033,22 @@
     }
 
     function pointRadiusFunction(points, key) {
-      if (key === "fixed") return () => 1.8;
+      if (key === "fixed") return () => 1.6;
       const values = numericValues(points, key);
       const extent = d3.extent(values);
-      const r = d3.scaleSqrt().domain(extent[0] === extent[1] ? [0, extent[1] || 1] : extent).range([1.4, 5.8]);
+      const r = d3.scaleSqrt()
+        .domain(extent[0] === extent[1] ? [0, extent[1] || 1] : extent)
+        .range([1.3, 5.2]);
       return d => r(num(d.properties[key]));
+    }
+
+    function pointRadiusValues(points, key) {
+      if (key === "fixed") return [1.6, 1.6, 1.6];
+      const values = numericValues(points, key).sort(d3.ascending);
+      if (!values.length) return [1.3, 3.0, 5.2];
+      const r = pointRadiusFunction(points, key);
+      const proxy = v => ({ properties: { [key]: v } });
+      return [d3.min(values), d3.median(values), d3.max(values)].map(v => r(proxy(v)));
     }
 
     function updateLegend(layerMode, countyStyle) {
@@ -994,25 +1065,30 @@
 
         const wrap = legend.append("div")
           .style("display", "grid")
-          .style("grid-template-columns", "92px 1fr")
-          .style("gap", "10px")
+          .style("grid-template-columns", "178px 1fr")
+          .style("gap", "12px")
           .style("align-items", "start");
 
-        const grid = wrap.append("div").attr("class", "bivar-grid").style("grid-template-columns", "repeat(3, 28px)");
+        const grid = wrap.append("div").attr("class", "bivar-grid");
         for (let row = 2; row >= 0; row--) {
           for (let col = 0; col < 3; col++) {
-            grid.append("div").attr("class", "swatch").style("width", "28px").style("height", "22px").style("background", colors[row][col]);
+            grid.append("div")
+              .attr("class", "swatch")
+              .style("width", "30px")
+              .style("height", "24px")
+              .style("background", colors[row][col]);
           }
+          grid.append("div").text(row === 2 ? `High ${yLabel}` : row === 1 ? `Medium ${yLabel}` : `Low ${yLabel}`);
         }
+        grid.append("div").style("grid-column", "1 / 4").style("font-size", "11px").style("margin-top", "4px").text(`Low → High ${xLabel}`);
 
         const xLabels = classLabels(numericValues(state.counties.features, xKey), 3);
         const yLabels = classLabels(numericValues(state.counties.features, yKey), 3);
-        const intervals = wrap.append("div").style("font-size", "11px").style("line-height", "1.35");
-        intervals.append("div").style("font-weight", "700").text(`${xLabel} intervals`);
+        const intervals = wrap.append("div").attr("class", "bivar-intervals");
+        intervals.append("strong").text(`${xLabel} intervals`);
         xLabels.forEach((d, i) => intervals.append("div").text(`X${i + 1}: ${d}`));
-        intervals.append("div").style("font-weight", "700").style("margin-top", "6px").text(`${yLabel} intervals`);
+        intervals.append("strong").style("margin-top", "7px").text(`${yLabel} intervals`);
         yLabels.forEach((d, i) => intervals.append("div").text(`Y${i + 1}: ${d}`));
-        legend.append("div").attr("class", "hint").text("Matrix increases left-to-right for X and bottom-to-top for Y. Interval labels are listed beside the matrix to keep the legend readable.");
         return;
       }
 
@@ -1049,9 +1125,14 @@
       if (sizeKey !== "fixed") {
         const points = filteredBridgePoints();
         const ex = d3.extent(numericValues(points, sizeKey));
-        const row = legend.append("div").attr("class", "legend-row").style("margin-top", "8px");
-        [3, 6, 10].forEach((s, i) => row.append("span").attr("class", "circle-swatch").style("width", `${s}px`).style("height", `${s}px`));
-        row.append("span").text(`${pointLabel(sizeKey)} range: ${fmt(ex[0])} to ${fmt(ex[1])}`);
+        const radii = pointRadiusValues(points, sizeKey);
+        const row = legend.append("div").attr("class", "legend-row size-legend-row");
+        const symbols = row.append("span").attr("class", "size-symbols");
+        radii.forEach(r => symbols.append("span")
+          .attr("class", "circle-swatch")
+          .style("width", `${Math.max(3, r * 2)}px`)
+          .style("height", `${Math.max(3, r * 2)}px`));
+        row.append("span").text(`${pointLabel(sizeKey)} size: ${fmt(ex[0])} to ${fmt(ex[1])}`);
       }
     }
 
@@ -1061,23 +1142,18 @@
       row.append("span").text(label);
     }
 
-    function classLabels(values, k) {
+    function classLabels(values, k = null) {
       const clean = values.filter(Number.isFinite).sort(d3.ascending);
       if (!clean.length) return [];
-      const method = value("#classificationSelect");
-      let breaks;
-      if (method === "manual") {
-        const mids = value("#manualBreaksInput").split(",").map(d => +d.trim()).filter(Number.isFinite).sort(d3.ascending);
-        breaks = [d3.min(clean), ...mids, d3.max(clean)];
-      } else if (method === "equal") {
-        const min = d3.min(clean), max = d3.max(clean), step = (max - min) / k;
-        breaks = d3.range(k + 1).map(i => min + step * i);
-      } else if (method === "jenks") {
-        breaks = jenksBreaks(clean, k);
-      } else {
-        breaks = [d3.min(clean), ...d3.range(1, k).map(i => d3.quantileSorted(clean, i / k)), d3.max(clean)];
+      const info = breaksForValues(clean, k);
+      const breaks = [info.min, ...info.breaks, info.max];
+      const labels = [];
+      for (let i = 0; i < breaks.length - 1; i++) {
+        if (i === 0) labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
+        else if (i === breaks.length - 2) labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
+        else labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
       }
-      return d3.range(breaks.length - 1).map(i => `${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
+      return labels;
     }
 
     function openHistogram() {
@@ -1119,14 +1195,20 @@
       svgH.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("y", 16).attr("text-anchor", "middle").attr("font-size", 12).text("Count");
     }
 
-    function openStats() {
+    function openStats(showIowa = false) {
       const county = state.selectedCounty || value("#pointCountySelect");
-      if (!county) {
-        alert("Select or click a county first.");
-        return;
+      let points;
+      if (showIowa) {
+        points = state.bridges.features;
+        d3.select("#statsTitle").text("Iowa statewide bridge statistics");
+      } else {
+        if (!county) {
+          alert("Select or click a county first.");
+          return;
+        }
+        points = state.bridges.features.filter(d => d.properties.brcounty === county);
+        d3.select("#statsTitle").text(`${county} County bridge statistics`);
       }
-      const points = state.bridges.features.filter(d => d.properties.brcounty === county);
-      d3.select("#statsTitle").text(`${county} County bridge statistics`);
       drawBarChart("#conditionChart", rollupCounts(points, d => d.properties.brcond), conditionColors);
       drawBarChart("#structureChart", rollupCounts(points, d => d.properties.brstr));
       drawBarChart("#typeChart", rollupCounts(points, d => d.properties.brtype));
@@ -1205,7 +1287,7 @@
 
       heatCtx.save();
       heatCtx.globalCompositeOperation = "source-over";
-      heatCtx.globalAlpha = 0.34;
+      heatCtx.globalAlpha = 0.62;
       for (const d of points) {
         const projected = state.projection(d.geometry.coordinates);
         if (!projected) continue;
@@ -1213,10 +1295,10 @@
         const y = state.transform.applyY(projected[1]);
         if (x < -radius || y < -radius || x > heatCanvas.width + radius || y > heatCanvas.height + radius) continue;
         const grad = heatCtx.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0.00, "rgba(255,0,0,0.45)");
-        grad.addColorStop(0.38, "rgba(255,255,0,0.28)");
-        grad.addColorStop(0.72, "rgba(0,180,0,0.18)");
-        grad.addColorStop(1.00, "rgba(0,180,0,0)");
+        grad.addColorStop(0.00, "rgba(220,0,0,0.62)");
+        grad.addColorStop(0.35, "rgba(255,220,0,0.44)");
+        grad.addColorStop(0.72, "rgba(0,170,0,0.26)");
+        grad.addColorStop(1.00, "rgba(0,170,0,0)");
         heatCtx.fillStyle = grad;
         heatCtx.beginPath();
         heatCtx.arc(x, y, radius, 0, Math.PI * 2);
@@ -1299,8 +1381,8 @@
     }
 
     function filteredBridgePoints() {
-      const county = value("#pointCountySelect");
-      return state.bridges.features.filter(d => !county || d.properties.brcounty === county);
+      const county = value("#pointCountySelect") || state.selectedCounty;
+      return state.bridges.features.filter(d => d.properties.brcounty === county);
     }
 
     function numericValues(features, key) {
