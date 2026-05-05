@@ -789,27 +789,45 @@
       const clean = values.filter(Number.isFinite).sort(d3.ascending);
       const method = value("#classificationSelect");
       const k = forcedClassCount || Math.max(3, Math.min(9, +value("#classCountInput") || 5));
-      if (!clean.length) return () => 0;
+
+      // This returns a function, but it also carries class metadata.
+      // The earlier version called scale.range(), which only exists on D3 scale objects.
+      // Our classifier is a plain function, so we attach a compatible range() method here.
+      function classifierFromBreaks(breaks, classCount) {
+        const f = d => Math.max(0, Math.min(classCount - 1, d3.bisectRight(breaks, d)));
+        f.breaks = breaks;
+        f.classCount = classCount;
+        f.range = () => d3.range(classCount);
+        return f;
+      }
+
+      if (!clean.length) return classifierFromBreaks([], 1);
 
       if (method === "manual" && !forcedClassCount) {
-        const breaks = value("#manualBreaksInput").split(",").map(d => +d.trim()).filter(Number.isFinite).sort(d3.ascending);
-        return d => d3.bisectRight(breaks, d);
+        const breaks = value("#manualBreaksInput")
+          .split(",")
+          .map(d => +d.trim())
+          .filter(Number.isFinite)
+          .sort(d3.ascending);
+        return classifierFromBreaks(breaks, Math.max(1, breaks.length + 1));
       }
 
       if (method === "equal") {
         const min = d3.min(clean), max = d3.max(clean);
         const step = (max - min) / k;
-        const breaks = d3.range(1, k).map(i => min + step * i);
-        return d => d3.bisectRight(breaks, d);
+        const breaks = step === 0 ? [] : d3.range(1, k).map(i => min + step * i);
+        return classifierFromBreaks(breaks, breaks.length + 1);
       }
 
       if (method === "jenks") {
-        const breaks = jenksBreaks(clean, k);
-        return d => d3.bisectRight(breaks.slice(1, -1), d);
+        const breaks = jenksBreaks(clean, k).slice(1, -1);
+        return classifierFromBreaks(breaks, breaks.length + 1);
       }
 
-      const quantiles = d3.range(1, k).map(i => d3.quantileSorted(clean, i / k));
-      return d => d3.bisectRight(quantiles, d);
+      const quantiles = d3.range(1, k)
+        .map(i => d3.quantileSorted(clean, i / k))
+        .filter((d, i, arr) => Number.isFinite(d) && (i === 0 || d !== arr[i - 1]));
+      return classifierFromBreaks(quantiles, quantiles.length + 1);
     }
 
     function selectedColors(n) {
