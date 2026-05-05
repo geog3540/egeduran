@@ -50,15 +50,10 @@
     }
 
     .title-block h1 {
-      margin: 0 0 4px 0;
+      margin: 0;
       font-size: 19px;
       letter-spacing: 0.2px;
-    }
-
-    .title-block p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
+      white-space: nowrap;
     }
 
     .top-controls {
@@ -220,8 +215,9 @@
       position: absolute;
       right: 22px;
       bottom: 22px;
-      min-width: 350px;
-      max-width: 720px;
+      width: max-content;
+      min-width: 240px;
+      max-width: min(760px, calc(100vw - 330px));
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -243,6 +239,7 @@
       gap: 8px;
       margin: 4px 0;
       font-size: 12px;
+      white-space: nowrap;
     }
 
     .swatch {
@@ -259,13 +256,37 @@
       border: 1px solid #111827;
     }
 
-    .bivar-grid {
+    .bivar-grid-wrap {
       display: grid;
-      grid-template-columns: repeat(3, 30px) 78px;
-      grid-template-rows: repeat(3, 24px);
-      gap: 2px 8px;
+      grid-template-columns: 18px repeat(3, 30px);
+      grid-template-rows: repeat(3, 24px) 18px;
+      gap: 2px;
       align-items: center;
+    }
+
+    .bivar-grid {
+      display: contents;
       font-size: 11px;
+    }
+
+    .bivar-y-axis {
+      grid-row: 1 / 4;
+      grid-column: 1;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .bivar-x-axis {
+      grid-column: 2 / 5;
+      grid-row: 4;
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      white-space: nowrap;
     }
 
     .bivar-intervals {
@@ -413,6 +434,23 @@
       font-size: 14px;
     }
 
+    .manual-boxes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .manual-boxes input {
+      padding: 7px 6px;
+      font-size: 12px;
+    }
+
+    .manual-boxes input[readonly] {
+      background: #eef2f7;
+      color: #667085;
+      font-weight: 700;
+    }
+
     .manual-wrap { display: none; }
     .manual-wrap.active { display: block; }
     .bivar-only { display: none; }
@@ -426,7 +464,6 @@
     <header>
       <div class="title-block">
         <h1>Interactive Geovisualization of Iowa Bridge Infrastructure</h1>
-        <p>County summaries, bridge points, classification, histograms, heatmaps, and linked statistics.</p>
       </div>
 
       <div class="top-controls">
@@ -454,8 +491,8 @@
           </select>
         </div>
         <div class="manual-wrap" id="manualBreakWrap">
-          <label for="manualBreaksInput">Manual breaks</label>
-          <input id="manualBreaksInput" value="10,25,50,75" placeholder="Example: 10,25,50,75" />
+          <label>Manual class limits</label>
+          <div id="manualBreakBoxes" class="manual-boxes"></div>
         </div>
         <div>
           <label>&nbsp;</label>
@@ -525,7 +562,6 @@
           <select id="bivarXSelect"></select>
           <label for="bivarYSelect">Bivariate Y variable</label>
           <select id="bivarYSelect"></select>
-          <p class="hint">Bivariate mode fixes the county classes at 3 × 3. Quantile classification is usually the cleanest first option for this style.</p>
         </div>
       </div>
 
@@ -533,7 +569,6 @@
         <h2>Statistics</h2>
         <button id="statsBtn" type="button" class="secondary">Open selected county statistics</button>
         <button id="statsIowaBtn" type="button" class="secondary" style="margin-top:8px;">Open Iowa statistics</button>
-        <p class="hint">County statistics use the selected/clicked county. Iowa statistics summarize all bridge records statewide.</p>
       </div>
 
       <div id="summaryCards"></div>
@@ -556,7 +591,6 @@
         <button class="close-btn" data-close="histogramModal">Close</button>
       </div>
       <svg id="histogramSvg" width="840" height="430"></svg>
-      <p class="hint" id="histogramNote"></p>
     </div>
   </div>
 
@@ -643,7 +677,7 @@
       orRd: { label: "OrRd", colors: d3.schemeOrRd[9] },
       rdPu: { label: "RdPu", colors: d3.schemeRdPu[9] },
       puRd: { label: "PuRd", colors: d3.schemePuRd[9] },
-      rdYlGnReverse: { label: "RdYlGn reversed", colors: [...d3.schemeRdYlGn[9]].reverse() }
+      rdYlGnReverse: { label: "RdYlGn", colors: [...d3.schemeRdYlGn[9]].reverse() }
     };
 
     const bivarSchemes = {
@@ -762,8 +796,8 @@
         .attr("value", d => d)
         .text(d => d);
 
-      state.selectedCounty = countyOptions[0] || null;
-      d3.select("#pointCountySelect").property("value", state.selectedCounty);
+      state.selectedCounty = null;
+      d3.select("#pointCountySelect").property("value", countyOptions[0] || "");
 
       d3.select("#bivarXSelect")
         .selectAll("option")
@@ -802,10 +836,16 @@
     }
 
     function updateControlVisibility() {
-      const classification = value("#classificationSelect");
+      let classification = value("#classificationSelect");
       const countyStyle = value("#countyStyleSelect");
       const layerMode = value("#layerModeSelect");
       const isBivar = countyStyle === "bivariate" && layerMode === "county";
+
+      d3.select('#classificationSelect option[value="manual"]').property("disabled", isBivar);
+      if (isBivar && classification === "manual") {
+        d3.select("#classificationSelect").property("value", "quantile");
+        classification = "quantile";
+      }
 
       d3.select("#manualBreakWrap").classed("active", classification === "manual" && !isBivar);
       d3.select("#bivarControls").classed("active", isBivar);
@@ -813,8 +853,10 @@
       d3.select("#heatmapControls").classed("active", layerMode === "point");
 
       populateColorSchemeOptions(isBivar ? "bivariate" : "single");
+      updateManualBreakBoxes();
       if (layerMode !== "point") clearHeatmap();
     }
+
 
     function populateColorSchemeOptions(mode) {
       if (colorOptionMode === mode) return;
@@ -848,12 +890,14 @@
       if (!state.counties || !state.bridges || !state.path) return;
       const layerMode = value("#layerModeSelect");
       const countyStyle = value("#countyStyleSelect");
-      const selectedCountyFromDropdown = value("#pointCountySelect");
-      if (selectedCountyFromDropdown) state.selectedCounty = selectedCountyFromDropdown;
-      if (layerMode === "point" && !state.selectedCounty) {
-        const firstCounty = state.counties.features.map(d => d.properties.CountyName).sort(d3.ascending)[0];
-        state.selectedCounty = firstCounty;
-        d3.select("#pointCountySelect").property("value", firstCounty);
+      if (layerMode === "point") {
+        const selectedCountyFromDropdown = value("#pointCountySelect");
+        if (selectedCountyFromDropdown) state.selectedCounty = selectedCountyFromDropdown;
+        if (!state.selectedCounty) {
+          const firstCounty = state.counties.features.map(d => d.properties.CountyName).sort(d3.ascending)[0];
+          state.selectedCounty = firstCounty;
+          d3.select("#pointCountySelect").property("value", firstCounty);
+        }
       }
 
       drawCounties(layerMode, countyStyle);
@@ -863,6 +907,7 @@
       updateSummaryCards();
       updateScaleBar();
     }
+
 
     function drawCounties(layerMode, countyStyle) {
       let fillFn;
@@ -902,13 +947,13 @@
     }
 
     function drawPoints(layerMode) {
-      if (layerMode !== "point") {
+      if (layerMode !== "point" || value("#heatmapToggle") === "on") {
         gPoints.selectAll("circle").remove();
         return;
       }
 
-      const county = value("#pointCountySelect");
-      const points = state.bridges.features.filter(d => !county || d.properties.brcounty === county);
+      const county = value("#pointCountySelect") || state.selectedCounty;
+      const points = state.bridges.features.filter(d => d.properties.brcounty === county);
       const colorKey = value("#pointColorSelect");
       const sizeKey = value("#pointSizeSelect");
       const radius = pointRadiusFunction(points, sizeKey);
@@ -926,13 +971,59 @@
         .on("mouseleave", hideTooltip);
     }
 
+
+    function currentManualContext() {
+      const layerMode = value("#layerModeSelect");
+      let key, features;
+      if (layerMode === "county") {
+        key = value("#countyVariableSelect");
+        features = state.counties ? state.counties.features : [];
+      } else {
+        key = value("#pointColorSelect");
+        features = state.bridges ? filteredBridgePoints() : [];
+      }
+      return { key, values: numericValues(features, key) };
+    }
+
+    function updateManualBreakBoxes() {
+      const wrap = d3.select("#manualBreakBoxes");
+      if (!wrap.node() || value("#classificationSelect") !== "manual") {
+        wrap.html("");
+        return;
+      }
+      const ctx = currentManualContext();
+      const clean = ctx.values.filter(Number.isFinite).sort(d3.ascending);
+      if (!clean.length) {
+        wrap.html("");
+        return;
+      }
+      const k = Math.max(2, Math.min(9, +value("#classCountInput") || 5));
+      const min = d3.min(clean);
+      const max = d3.max(clean);
+      const oldMid = wrap.selectAll("input.manual-mid").nodes().map(n => +n.value).filter(Number.isFinite);
+      const defaults = d3.range(1, k).map(i => min + (max - min) * i / k);
+      const entries = d3.range(k + 1).map(i => ({
+        index: i,
+        value: i === 0 ? min : i === k ? max : (oldMid[i - 1] ?? defaults[i - 1]),
+        fixed: i === 0 || i === k
+      }));
+      const boxes = wrap.selectAll("input").data(entries, d => d.index);
+      boxes.join("input")
+        .attr("type", "number")
+        .attr("step", "any")
+        .attr("class", d => d.fixed ? "manual-fixed" : "manual-mid")
+        .property("readonly", d => d.fixed)
+        .property("value", d => fmt(d.value))
+        .on("input", render);
+    }
+
     function parsedManualBreaks() {
-      return value("#manualBreaksInput")
-        .split(",")
-        .map(d => +d.trim())
+      return d3.selectAll("#manualBreakBoxes input.manual-mid").nodes()
+        .map(d => +d.value)
         .filter(Number.isFinite)
         .sort(d3.ascending);
     }
+
 
     function breaksForValues(values, forcedClassCount = null) {
       const clean = values.filter(Number.isFinite).sort(d3.ascending);
@@ -947,20 +1038,13 @@
         const targetBreaks = Math.max(1, desiredK - 1);
         let breaks = parsedManualBreaks()
           .filter(d => d > min && d < max)
+          .sort(d3.ascending)
           .slice(0, targetBreaks);
-
-        // If the user has not supplied enough manual intervals, fill the rest
-        // with equal-interval candidates so the selected class number still works.
-        if (breaks.length < targetBreaks) {
+        if (breaks.length !== targetBreaks) {
           const step = (max - min) / desiredK;
-          const auto = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
-          breaks = [...breaks, ...auto]
-            .filter(d => d > min && d < max)
-            .sort(d3.ascending)
-            .filter((d, i, arr) => i === 0 || Math.abs(d - arr[i - 1]) > 1e-9)
-            .slice(0, targetBreaks);
+          breaks = step === 0 ? [] : d3.range(1, desiredK).map(i => min + step * i);
         }
-        return { breaks, classCount: breaks.length + 1, min, max };
+        return { breaks, classCount: desiredK, min, max };
       }
 
       if (method === "equal") {
@@ -1065,29 +1149,32 @@
 
         const wrap = legend.append("div")
           .style("display", "grid")
-          .style("grid-template-columns", "178px 1fr")
-          .style("gap", "12px")
+          .style("grid-template-columns", "128px max-content")
+          .style("gap", "14px")
           .style("align-items", "start");
 
-        const grid = wrap.append("div").attr("class", "bivar-grid");
+        const gridWrap = wrap.append("div").attr("class", "bivar-grid-wrap");
+        gridWrap.append("div").attr("class", "bivar-y-axis").text(`Low → High ${yLabel}`);
+        const grid = gridWrap.append("div").attr("class", "bivar-grid");
         for (let row = 2; row >= 0; row--) {
           for (let col = 0; col < 3; col++) {
             grid.append("div")
               .attr("class", "swatch")
+              .style("grid-column", col + 2)
+              .style("grid-row", 3 - row)
               .style("width", "30px")
               .style("height", "24px")
               .style("background", colors[row][col]);
           }
-          grid.append("div").text(row === 2 ? `High ${yLabel}` : row === 1 ? `Medium ${yLabel}` : `Low ${yLabel}`);
         }
-        grid.append("div").style("grid-column", "1 / 4").style("font-size", "11px").style("margin-top", "4px").text(`Low → High ${xLabel}`);
+        gridWrap.append("div").attr("class", "bivar-x-axis").text(`Low → High ${xLabel}`);
 
         const xLabels = classLabels(numericValues(state.counties.features, xKey), 3);
         const yLabels = classLabels(numericValues(state.counties.features, yKey), 3);
         const intervals = wrap.append("div").attr("class", "bivar-intervals");
-        intervals.append("strong").text(`${xLabel} intervals`);
+        intervals.append("strong").text(`${xLabel}`);
         xLabels.forEach((d, i) => intervals.append("div").text(`X${i + 1}: ${d}`));
-        intervals.append("strong").style("margin-top", "7px").text(`${yLabel} intervals`);
+        intervals.append("strong").style("margin-top", "7px").text(`${yLabel}`);
         yLabels.forEach((d, i) => intervals.append("div").text(`Y${i + 1}: ${d}`));
         return;
       }
@@ -1125,16 +1212,16 @@
       if (sizeKey !== "fixed") {
         const points = filteredBridgePoints();
         const ex = d3.extent(numericValues(points, sizeKey));
-        const radii = pointRadiusValues(points, sizeKey);
         const row = legend.append("div").attr("class", "legend-row size-legend-row");
         const symbols = row.append("span").attr("class", "size-symbols");
-        radii.forEach(r => symbols.append("span")
+        [4, 8, 12].forEach(s => symbols.append("span")
           .attr("class", "circle-swatch")
-          .style("width", `${Math.max(3, r * 2)}px`)
-          .style("height", `${Math.max(3, r * 2)}px`));
-        row.append("span").text(`${pointLabel(sizeKey)} size: ${fmt(ex[0])} to ${fmt(ex[1])}`);
+          .style("width", `${s}px`)
+          .style("height", `${s}px`));
+        row.append("span").text(`Point size = ${pointLabel(sizeKey)} (${fmt(ex[0])} to ${fmt(ex[1])})`);
       }
     }
+
 
     function addLegendRow(parent, color, label) {
       const row = parent.append("div").attr("class", "legend-row");
@@ -1165,18 +1252,19 @@
       }
       const features = layerMode === "county" ? state.counties.features : filteredBridgePoints();
       const values = numericValues(features, key);
-      drawHistogram(values, layerMode === "county" ? labelForCounty(key) : pointLabel(key));
+      const scope = layerMode === "county" ? "Iowa counties" : `${value("#pointCountySelect") || state.selectedCounty} County`;
+      drawHistogram(values, layerMode === "county" ? labelForCounty(key) : pointLabel(key), scope);
       d3.select("#histogramModal").classed("open", true);
     }
 
-    function drawHistogram(values, title) {
+
+    function drawHistogram(values, title, scope) {
       const svgH = d3.select("#histogramSvg");
       svgH.selectAll("*").remove();
       const width = +svgH.attr("width"), height = +svgH.attr("height");
       const margin = { top: 20, right: 24, bottom: 48, left: 58 };
       const clean = values.filter(Number.isFinite);
-      d3.select("#histogramTitle").text(`Histogram: ${title}`);
-      d3.select("#histogramNote").text(`${clean.length.toLocaleString()} valid records. Use this distribution to decide whether equal interval, quantile, natural breaks, or manual classes make sense.`);
+      d3.select("#histogramTitle").text(`Histogram: ${title} — ${scope}`);
       if (!clean.length) return;
       const x = d3.scaleLinear().domain(d3.extent(clean)).nice().range([margin.left, width - margin.right]);
       const bins = d3.bin().domain(x.domain()).thresholds(24)(clean);
@@ -1194,6 +1282,7 @@
       svgH.append("text").attr("x", width / 2).attr("y", height - 8).attr("text-anchor", "middle").attr("font-size", 12).text(title);
       svgH.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("y", 16).attr("text-anchor", "middle").attr("font-size", 12).text("Count");
     }
+
 
     function openStats(showIowa = false) {
       const county = state.selectedCounty || value("#pointCountySelect");
@@ -1283,11 +1372,11 @@
       const points = filteredBridgePoints();
       if (!points.length || !state.projection) return;
       const radiusValue = value("#heatmapRadiusSelect");
-      const radius = radiusValue === "low" ? 14 : radiusValue === "high" ? 42 : 26;
+      const radius = radiusValue === "low" ? 34 : radiusValue === "high" ? 105 : 62;
 
       heatCtx.save();
       heatCtx.globalCompositeOperation = "source-over";
-      heatCtx.globalAlpha = 0.62;
+      heatCtx.globalAlpha = 0.82;
       for (const d of points) {
         const projected = state.projection(d.geometry.coordinates);
         if (!projected) continue;
@@ -1295,9 +1384,9 @@
         const y = state.transform.applyY(projected[1]);
         if (x < -radius || y < -radius || x > heatCanvas.width + radius || y > heatCanvas.height + radius) continue;
         const grad = heatCtx.createRadialGradient(x, y, 0, x, y, radius);
-        grad.addColorStop(0.00, "rgba(220,0,0,0.62)");
-        grad.addColorStop(0.35, "rgba(255,220,0,0.44)");
-        grad.addColorStop(0.72, "rgba(0,170,0,0.26)");
+        grad.addColorStop(0.00, "rgba(220,0,0,0.82)");
+        grad.addColorStop(0.34, "rgba(255,220,0,0.62)");
+        grad.addColorStop(0.72, "rgba(0,170,0,0.42)");
         grad.addColorStop(1.00, "rgba(0,170,0,0)");
         heatCtx.fillStyle = grad;
         heatCtx.beginPath();
@@ -1306,6 +1395,7 @@
       }
       heatCtx.restore();
     }
+
 
     function updateScaleBar() {
       if (!state.projection || !state.transform) return;
@@ -1332,14 +1422,14 @@
       const container = d3.select("#summaryCards");
       container.html("");
       const layerMode = value("#layerModeSelect");
-      const county = state.selectedCounty || value("#pointCountySelect");
+      const county = layerMode === "point" ? (value("#pointCountySelect") || state.selectedCounty) : state.selectedCounty;
       let points = layerMode === "point" ? filteredBridgePoints() : state.bridges.features;
       if (county) points = state.bridges.features.filter(d => d.properties.brcounty === county);
       const closed500 = points.filter(d => d.properties.br500).length;
       const poor = points.filter(d => d.properties.brcond === "Poor").length;
       const avgAge = d3.mean(points, d => num(d.properties.brage));
       const cards = [
-        [points.length.toLocaleString(), county ? `${county} bridges` : "Displayed bridges"],
+        [points.length.toLocaleString(), county ? `${county} bridges` : "Iowa bridges"],
         [poor.toLocaleString(), "Poor-condition bridges"],
         [closed500.toLocaleString(), "Closed under 500-year scenario"],
         [fmt(avgAge), "Average bridge age"]
@@ -1350,6 +1440,7 @@
         card.append("span").text(lab);
       });
     }
+
 
     function showCountyTooltip(event, d) {
       const p = d.properties;
@@ -1384,6 +1475,7 @@
       const county = value("#pointCountySelect") || state.selectedCounty;
       return state.bridges.features.filter(d => d.properties.brcounty === county);
     }
+
 
     function numericValues(features, key) {
       return features.map(d => num(d.properties[key])).filter(Number.isFinite);
