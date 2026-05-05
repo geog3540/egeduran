@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive Geovisualization of Iowa Bridge Network</title>
+  <link rel="icon" type="image/png" href="bridgelogo.png" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     :root {
@@ -634,6 +635,20 @@
 .manual-dash {
   margin: 0 1px !important;
   padding-bottom: 8px !important;
+}
+
+
+/* v11 patch: fixed manual min/max boxes */
+.manual-fixed-limit {
+  background: #eef2f7 !important;
+  color: #475467 !important;
+  cursor: not-allowed !important;
+  border-color: #cbd5e1 !important;
+}
+input[type="number"].manual-fixed-limit::-webkit-inner-spin-button,
+input[type="number"].manual-fixed-limit::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 </style>
@@ -1833,5 +1848,49 @@
       return breaks;
     }
   </script>
+
+<script>
+/* v11 patch: keep manual classification min/max locked */
+(function () {
+  function lockManualMinMaxBoxes() {
+    const wrap = document.querySelector("#manualBreakWrap");
+    if (!wrap) return;
+
+    const inputs = Array.from(wrap.querySelectorAll("input"));
+    if (inputs.length < 2) return;
+
+    const first = inputs[0];
+    const last = inputs[inputs.length - 1];
+
+    inputs.forEach(input => {
+      input.classList.remove("manual-fixed-limit");
+      input.removeAttribute("readonly");
+      input.removeAttribute("aria-readonly");
+    });
+
+    [first, last].forEach(input => {
+      input.classList.add("manual-fixed-limit");
+      input.setAttribute("readonly", "readonly");
+      input.setAttribute("aria-readonly", "true");
+      input.addEventListener("keydown", e => e.preventDefault(), { once: false });
+      input.addEventListener("paste", e => e.preventDefault(), { once: false });
+      input.addEventListener("wheel", e => input.blur(), { passive: true });
+    });
+  }
+
+  const observer = new MutationObserver(lockManualMinMaxBoxes);
+  window.addEventListener("load", () => {
+    lockManualMinMaxBoxes();
+    const wrap = document.querySelector("#manualBreakWrap");
+    if (wrap) observer.observe(wrap, { childList: true, subtree: true, attributes: true });
+  });
+  document.addEventListener("change", event => {
+    if (event.target && (event.target.id === "classCountInput" || event.target.id === "classificationSelect")) {
+      setTimeout(lockManualMinMaxBoxes, 0);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
