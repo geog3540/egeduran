@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -510,8 +509,29 @@
   </div>
 
   <script>
-    const COUNTY_FILE = "IowaCounty.json";
-    const BRIDGE_FILE = "bridgedata.json";
+    // GitHub Pages is case-sensitive. These loaders try the common locations:
+    // 1) same folder as this HTML
+    // 2) a /data folder next to this HTML
+    // 3) one folder above this HTML
+    // This fixes the common problem where index.html is inside a project folder,
+    // but the JSON files are uploaded to the repository root.
+    const COUNTY_FILE_CANDIDATES = [
+      "IowaCounty.json",
+      "./IowaCounty.json",
+      "data/IowaCounty.json",
+      "./data/IowaCounty.json",
+      "../IowaCounty.json",
+      "../data/IowaCounty.json"
+    ];
+
+    const BRIDGE_FILE_CANDIDATES = [
+      "bridgedata.json",
+      "./bridgedata.json",
+      "data/bridgedata.json",
+      "./data/bridgedata.json",
+      "../bridgedata.json",
+      "../data/bridgedata.json"
+    ];
 
     const countyVariables = [
       { key: "Bridge", label: "Total bridges" },
@@ -572,7 +592,30 @@
 
     svg.call(zoom);
 
-    Promise.all([d3.json(COUNTY_FILE), d3.json(BRIDGE_FILE)]).then(([counties, bridges]) => {
+    function loadJsonFromCandidates(candidates, label) {
+      const attempted = [];
+
+      function tryOne(i) {
+        if (i >= candidates.length) {
+          throw new Error(`${label} could not be loaded. Tried: ${attempted.join(", ")}`);
+        }
+
+        const url = candidates[i];
+        attempted.push(url);
+        return d3.json(url).catch(() => tryOne(i + 1));
+      }
+
+      return tryOne(0);
+    }
+
+    Promise.all([
+      loadJsonFromCandidates(COUNTY_FILE_CANDIDATES, "IowaCounty.json"),
+      loadJsonFromCandidates(BRIDGE_FILE_CANDIDATES, "bridgedata.json")
+    ]).then(([counties, bridges]) => {
+      if (!counties || !counties.features || !bridges || !bridges.features) {
+        throw new Error("The JSON files loaded, but one of them is not a valid GeoJSON FeatureCollection.");
+      }
+
       state.counties = counties;
       state.bridges = bridges;
       populateControls();
@@ -585,10 +628,13 @@
         .style("position", "absolute")
         .style("top", "20px")
         .style("left", "20px")
+        .style("right", "20px")
         .style("background", "#fff")
-        .style("padding", "12px")
-        .style("border", "1px solid #ccc")
-        .text("Could not load IowaCounty.json or bridgedata.json. Put this HTML file in the same folder as both JSON files and run it through a local server.");
+        .style("padding", "14px")
+        .style("border", "1px solid #c0392b")
+        .style("border-radius", "8px")
+        .style("box-shadow", "0 8px 24px rgba(0,0,0,0.12)")
+        .html(`<strong>JSON loading problem</strong><br>${err.message}<br><br>Put <code>IowaCounty.json</code> and <code>bridgedata.json</code> in the same folder as this HTML, or put them in a <code>data</code> folder. If this HTML is inside a subfolder, this version also tries the parent folder.`);
     });
 
     function populateControls() {
