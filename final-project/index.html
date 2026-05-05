@@ -58,7 +58,7 @@
 
     .top-controls {
       display: grid;
-      grid-template-columns: 128px 78px 138px minmax(360px, 1fr) 138px;
+      grid-template-columns: minmax(150px, 170px) minmax(100px, 120px) minmax(150px, 175px) minmax(360px, 460px) minmax(135px, 150px);
       gap: 8px;
       align-items: end;
       flex: 1;
@@ -516,7 +516,49 @@
     .bivar-only.active { display: block; }
     .point-only { display: none; }
     .point-only.active { display: block; }
-  </style>
+  
+/* v9 adjustments: stable histogram size and wider manual classification row */
+.top-controls {
+  justify-content: start;
+  max-width: none;
+}
+
+#histogramBtn {
+  width: 150px;
+  min-width: 150px;
+  white-space: nowrap;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#manualBreakWrap {
+  min-width: 440px;
+  max-width: 520px;
+  overflow: visible;
+}
+
+.manual-breaks-row,
+.manual-class-row,
+#manualBreakInputs,
+#manualBreakBoxes {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+.manual-break-box,
+.manual-class-box,
+.manual-limit-input,
+.manual-break-input {
+  width: 58px !important;
+  min-width: 58px !important;
+}
+
+.manual-separator,
+.manual-dash {
+  margin: 0 3px !important;
+}
+
+</style>
 </head>
 <body>
   <div id="app">
