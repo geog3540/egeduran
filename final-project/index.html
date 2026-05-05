@@ -58,11 +58,11 @@
 
     .top-controls {
       display: grid;
-      grid-template-columns: repeat(5, minmax(115px, 155px));
+      grid-template-columns: 128px 92px 138px minmax(255px, 1fr) 118px;
       gap: 8px;
       align-items: end;
       flex: 1;
-      max-width: 860px;
+      max-width: 915px;
     }
 
     aside {
@@ -258,10 +258,11 @@
 
     .bivar-grid-wrap {
       display: grid;
-      grid-template-columns: 28px repeat(3, 34px);
+      grid-template-columns: 24px repeat(3, 34px);
       grid-template-rows: repeat(3, 28px) 34px;
       gap: 2px;
       align-items: center;
+      overflow: visible;
     }
 
     .bivar-grid {
@@ -272,17 +273,22 @@
     .bivar-y-axis {
       grid-row: 1 / 4;
       grid-column: 1;
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
+      width: 100px;
+      height: 28px;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      justify-self: center;
+      align-self: center;
       font-size: 12px;
       line-height: 1.05;
       color: var(--muted);
       text-align: center;
-      white-space: normal;
+      white-space: nowrap;
     }
 
     .bivar-y-axis span, .bivar-x-axis span {
       display: block;
+      white-space: nowrap;
     }
 
     .bivar-x-axis {
@@ -292,7 +298,7 @@
       line-height: 1.05;
       color: var(--muted);
       text-align: center;
-      white-space: normal;
+      white-space: nowrap;
     }
 
     .bivar-intervals {
@@ -442,15 +448,26 @@
     }
 
     .manual-boxes {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(104px, 1fr));
-      gap: 7px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 1px;
     }
 
     .manual-boxes input {
-      padding: 8px 7px;
+      padding: 6px 5px;
       font-size: 12px;
-      min-width: 104px;
+      width: 54px;
+      min-width: 54px;
+      text-align: center;
+    }
+
+    .manual-separator {
+      font-size: 13px;
+      color: var(--muted);
+      flex: 0 0 auto;
     }
 
     .manual-boxes input[readonly] {
@@ -485,7 +502,7 @@
           </select>
         </div>
         <div>
-          <label for="classCountInput">Classes</label>
+          <label for="classCountInput">Class number</label>
           <input id="classCountInput" type="number" min="3" max="9" value="5" />
         </div>
         <div>
@@ -499,7 +516,7 @@
           </select>
         </div>
         <div class="manual-wrap" id="manualBreakWrap">
-          <label>Manual class limits</label>
+          <label>Manual<br>class limits</label>
           <div id="manualBreakBoxes" class="manual-boxes"></div>
         </div>
         <div>
@@ -1031,19 +1048,27 @@
         return Number.isFinite(old) && old > min && old < max ? old : d;
       });
       const entries = [
-        { index: 0, value: min, fixed: true, label: "min" },
+        { index: 0, value: min, fixed: true, label: "minimum" },
         ...midValues.map((v, i) => ({ index: i + 1, value: v, fixed: false, label: `break ${i + 1}` })),
-        { index: k, value: max, fixed: true, label: "max" }
+        { index: k, value: max, fixed: true, label: "maximum" }
       ];
-      const boxes = wrap.selectAll("input").data(entries, d => d.index);
-      boxes.join("input")
-        .attr("type", "number")
-        .attr("step", "any")
-        .attr("title", d => d.label)
-        .attr("class", d => d.fixed ? "manual-fixed" : "manual-mid")
-        .property("readonly", d => d.fixed)
-        .property("value", d => manualNumber(d.value))
-        .on("input", render);
+
+      wrap.html("");
+      entries.forEach((d, i) => {
+        wrap.append("input")
+          .attr("type", "number")
+          .attr("step", "any")
+          .attr("title", d.label)
+          .attr("class", d.fixed ? "manual-fixed" : "manual-mid")
+          .property("readonly", d.fixed)
+          .property("value", manualNumber(d.value))
+          .on("input", render);
+        if (i < entries.length - 1) {
+          wrap.append("span")
+            .attr("class", "manual-separator")
+            .text("-");
+        }
+      });
     }
 
     function parsedManualBreaks() {
@@ -1175,14 +1200,14 @@
 
         const wrap = legend.append("div")
           .style("display", "grid")
-          .style("grid-template-columns", "142px max-content")
+          .style("grid-template-columns", "138px max-content")
           .style("gap", "14px")
           .style("align-items", "start");
 
         const gridWrap = wrap.append("div").attr("class", "bivar-grid-wrap");
         gridWrap.append("div")
           .attr("class", "bivar-y-axis")
-          .html(`<span>Low ───→ High</span><span>${shortAxisLabel(yKey)}</span>`);
+          .html(`<span>Low ─→ High</span><span>${shortAxisLabel(yKey)}</span>`);
         const grid = gridWrap.append("div").attr("class", "bivar-grid");
         for (let row = 2; row >= 0; row--) {
           for (let col = 0; col < 3; col++) {
@@ -1197,7 +1222,7 @@
         }
         gridWrap.append("div")
           .attr("class", "bivar-x-axis")
-          .html(`<span>Low ───→ High</span><span>${shortAxisLabel(xKey)}</span>`);
+          .html(`<span>Low ─→ High</span><span>${shortAxisLabel(xKey)}</span>`);
 
         const xLabels = classLabels(numericValues(state.counties.features, xKey), 3);
         const yLabels = classLabels(numericValues(state.counties.features, yKey), 3);
@@ -1413,8 +1438,8 @@
       if (!points.length || !state.projection) return;
 
       const radiusValue = value("#heatmapRadiusSelect");
-      const radius = radiusValue === "low" ? 85 : radiusValue === "high" ? 210 : 135;
-      const weight = radiusValue === "low" ? 0.18 : radiusValue === "high" ? 0.30 : 0.24;
+      const radius = radiusValue === "low" ? 30 : radiusValue === "high" ? 80 : 52;
+      const weight = radiusValue === "low" ? 0.14 : radiusValue === "high" ? 0.24 : 0.19;
 
       const off = document.createElement("canvas");
       off.width = heatCanvas.width;
