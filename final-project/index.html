@@ -518,7 +518,6 @@
     .point-only { display: none; }
     .point-only.active { display: block; }
   
-/* v9 adjustments: stable histogram size and wider manual classification row */
 .top-controls {
   justify-content: start;
   max-width: none;
@@ -559,8 +558,6 @@
   margin: 0 3px !important;
 }
 
-
-/* v10 adjustments: dropdown classes and dynamic manual-class layout */
 .top-controls {
   display: flex !important;
   grid-template-columns: none !important;
@@ -638,7 +635,6 @@
 }
 
 
-/* v13 header/logo adjustment */
 .title-block {
   display: flex;
   align-items: center;
@@ -674,8 +670,11 @@
 <body>
   <div id="app">
     <header>
-      <div class="title-block">
-        <h1>Interactive Geovisualization of<br>Iowa Bridge Network</h1>
+       <div class="title-block">
+        <img class="header-logo" src="bridgelogo.png" alt="Bridge logo" />
+        <div class="title-text">
+          <h1>Interactive Geovisualization of<br>Iowa Bridge Network</h1>
+        </div>
       </div>
 
       <div class="top-controls">
