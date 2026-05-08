@@ -637,13 +637,45 @@
   padding-bottom: 8px !important;
 }
 
+
+/* v13 header/logo adjustment */
+.title-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 360px;
+}
+
+.header-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.title-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title-block h1 {
+  max-width: 430px;
+  line-height: 1.12;
+  white-space: normal;
+}
+
+.title-block p {
+  display: none;
+}
+
 </style>
 </head>
 <body>
   <div id="app">
     <header>
       <div class="title-block">
-        <h1>Interactive Geovisualization of Iowa Bridge Network</h1>
+        <h1>Interactive Geovisualization of<br>Iowa Bridge Network</h1>
       </div>
 
       <div class="top-controls">
@@ -700,7 +732,7 @@
         <label for="pointCountySelect">County for bridge points</label>
         <select id="pointCountySelect"></select>
 
-        <label for="pointColorSelect">Point color</label>
+        <label for="pointColorSelect">Point variable</label>
         <select id="pointColorSelect">
           <option value="brcond">Bridge condition</option>
           <option value="brage">Bridge age</option>
