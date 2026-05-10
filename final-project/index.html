@@ -1057,6 +1057,11 @@
       d3.select("#statsBtn").on("click", () => openStats(false));
       d3.select("#statsIowaBtn").on("click", () => openStats(true));
 
+      d3.select("#manualBreakBoxes").on("input", () => {
+        render();
+      });
+
+
       d3.selectAll("[data-close]").on("click", function() {
         d3.select("#" + this.dataset.close).classed("open", false);
       });
@@ -1495,13 +1500,18 @@
     function classLabels(values, k = null) {
       const clean = values.filter(Number.isFinite).sort(d3.ascending);
       if (!clean.length) return [];
-      const info = breaksForValues(clean, k);
+
+      const isManual = value("#classificationSelect") === "manual";
+      const isBivar = value("#layerModeSelect") === "county" && value("#countyStyleSelect") === "bivariate";
+
+      // In manual mode, do not force k here. Otherwise breaksForValues ignores
+      // the editable manual boxes. Bivariate still forces 3 classes.
+      const info = breaksForValues(clean, isManual && !isBivar ? null : k);
       const breaks = [info.min, ...info.breaks, info.max];
+
       const labels = [];
       for (let i = 0; i < breaks.length - 1; i++) {
-        if (i === 0) labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
-        else if (i === breaks.length - 2) labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
-        else labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
+        labels.push(`${fmt(breaks[i])} – ${fmt(breaks[i + 1])}`);
       }
       return labels;
     }
