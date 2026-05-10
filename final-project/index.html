@@ -1589,11 +1589,16 @@ function openStats(showIowa = false) {
       d3.select("#statsModal").classed("open", true);
     }
 
+
+    function displayCategoryLabel(label) {
+      return String(label).replace(/Prestressed/g, "Prestressed");
+    }
+
     function drawBarChart(selector, dataMap, colorMap = null) {
       const s = d3.select(selector); s.selectAll("*").remove();
       const width = +s.attr("width"), height = +s.attr("height");
       const margin = { top: 8, right: 12, bottom: 56, left: 46 };
-      const data = Array.from(dataMap, ([key, value]) => ({ key, value })).sort((a,b) => d3.descending(a.value, b.value));
+      const data = Array.from(dataMap, ([key, value]) => ({ key: displayCategoryLabel(key), value })).sort((a,b) => d3.descending(a.value, b.value));
       const x = d3.scaleBand().domain(data.map(d => d.key)).range([margin.left, width - margin.right]).padding(0.25);
       const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) || 1]).nice().range([height - margin.bottom, margin.top]);
       s.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x)).selectAll("text").attr("transform", "rotate(-28)").style("text-anchor", "end").style("font-size", "10px");
