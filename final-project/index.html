@@ -942,8 +942,8 @@
     };
 
     const classColors = {
-      "Rural": "#7f3b08",
-      "Urban": "#b2182b",
+      "Rural": "#2ca25f",
+      "Urban": "#984ea3",
       "Unknown": "#9ca3af"
     };
 
@@ -1556,6 +1556,7 @@
 
       const isManual = value("#classificationSelect") === "manual";
       const isBivar = value("#layerModeSelect") === "county" && value("#countyStyleSelect") === "bivariate";
+
       const info = breaksForValues(clean, isManual && !isBivar ? null : k);
       const breaks = [info.min, ...info.breaks, info.max];
 
