@@ -666,7 +666,7 @@
 }
 
 
-/* v15 refinements */
+/* v16 refinements: clean bivariate arrow and chart axis labels */
 .bivar-arrow {
   font-size: 12px;
   font-weight: 600;
@@ -749,7 +749,7 @@
         <select id="pointColorSelect">
           <option value="brcond">Bridge condition</option>
           <option value="brage">Bridge age</option>
-          <option value="__BRTraffic__">Traffic</option>
+          <option value="bradt">Traffic</option>
           <option value="brdetour">Detour length</option>
           <option value="closureSeverity">Closure severity</option>
         </select>
@@ -757,7 +757,7 @@
         <label for="pointSizeSelect">Point size</label>
         <select id="pointSizeSelect">
           <option value="fixed">Fixed size</option>
-          <option value="__BRTraffic__">Traffic</option>
+          <option value="bradt">Traffic</option>
           <option value="brdetour">Detour length</option>
           <option value="brage">Bridge age</option>
         </select>
@@ -835,10 +835,10 @@
         <div class="chart-box"><h3>Structure type</h3><svg id="typeChart" width="380" height="235"></svg></div>
         <div class="chart-box"><h3>Bridge class</h3><svg id="classChart" width="380" height="235"></svg></div>
         <div class="chart-box"><h3>Age distribution</h3><svg id="ageChart" width="380" height="235"></svg></div>
-        <div class="chart-box"><h3>Traffic distribution</h3><svg id="__TrafficCHART__" width="380" height="235"></svg></div>
+        <div class="chart-box"><h3>Traffic distribution</h3><svg id="adtChart" width="380" height="235"></svg></div>
         <div class="chart-box"><h3>Detour distribution</h3><svg id="detourChart" width="380" height="235"></svg></div>
         <div class="chart-box"><h3>Closure count by scenario</h3><svg id="closureChart" width="380" height="235"></svg></div>
-        <div class="chart-box"><h3>Disrupted traffic by scenario</h3><svg id="__DISRUPTED_Traffic_CHART__" width="380" height="235"></svg></div>
+        <div class="chart-box"><h3>Disrupted traffic by scenario</h3><svg id="disruptedAdtChart" width="380" height="235"></svg></div>
       </div>
     </div>
   </div>
@@ -880,9 +880,9 @@
       { key: "fd_50per", label: "50-year closure %" },
       { key: "fd_100per", label: "100-year closure %" },
       { key: "fd_500per", label: "500-year closure %" },
-      { key: "__FD50Traffic__", label: "50-year disrupted Traffic" },
-      { key: "__FD100Traffic__", label: "100-year disrupted Traffic" },
-      { key: "__FD500Traffic__", label: "500-year disrupted Traffic" },
+      { key: "fd_50adt", label: "50-year disrupted traffic" },
+      { key: "fd_100adt", label: "100-year disrupted traffic" },
+      { key: "fd_500adt", label: "500-year disrupted traffic" },
       { key: "fd_50detav", label: "50-year average detour" },
       { key: "fd_100detav", label: "100-year average detour" },
       { key: "fd_500detav", label: "500-year average detour" }
@@ -1510,7 +1510,7 @@
       const layerMode = value("#layerModeSelect");
       const key = layerMode === "county" ? value("#countyVariableSelect") : value("#pointColorSelect");
       if (key === "brcond" || key === "closureSeverity") {
-        alert("Histogram is for numeric fields. Select age, traffic, detour, or a numeric county variable.");
+        alert("Histogram is for numeric fields. Select age, Traffic, detour, or a numeric county variable.");
         return;
       }
       const features = layerMode === "county" ? state.counties.features : filteredBridgePoints();
@@ -1587,10 +1587,10 @@
       drawBarChart("#typeChart", rollupCounts(points, d => d.properties.brtype), null, "Structure type", "Count");
       drawBarChart("#classChart", rollupCounts(points, d => d.properties.brclass), null, "Bridge class", "Count");
       drawHistogramSmall("#ageChart", numericValues(points, "brage"), "Bridge age", "Count");
-      drawHistogramSmall("#__TrafficCHART__", numericValues(points, "__BRTraffic__"));
+      drawHistogramSmall("#adtChart", numericValues(points, "bradt"), "Traffic", "Count");
       drawHistogramSmall("#detourChart", numericValues(points, "brdetour"), "Detour length", "Count");
       drawScenarioChart("#closureChart", points);
-      __DRAW_DISRUPTED_Traffic_CHART__("#__DISRUPTED_Traffic_CHART__", points);
+      drawDisruptedAdtChart("#disruptedAdtChart", points);
       d3.select("#statsModal").classed("open", true);
     }
 
@@ -1637,13 +1637,13 @@
       drawBarChart(selector, new Map(data.map(d => [d.key, d.value])), null, "Flood scenario", "Closed bridges");
     }
 
-    function __DRAW_DISRUPTED_Traffic_CHART__(selector, points) {
+    function drawDisruptedAdtChart(selector, points) {
       const scenarios = [
         { key: "50-year", field: "br50" },
         { key: "100-year", field: "br100" },
         { key: "500-year", field: "br500" }
       ];
-      const data = scenarios.map(s => [s.key, d3.sum(points.filter(d => d.properties[s.field]), d => num(d.properties.__BRTraffic__))]);
+      const data = scenarios.map(s => [s.key, d3.sum(points.filter(d => d.properties[s.field]), d => num(d.properties.bradt))]);
       drawBarChart(selector, new Map(data), null, "Flood scenario", "Disrupted traffic");
     }
 
@@ -1774,7 +1774,7 @@
       tooltip.style("opacity", 1)
         .style("left", `${event.clientX}px`)
         .style("top", `${event.clientY}px`)
-        .html(`<strong>Bridge ${p.brid}</strong><br>${p.brcounty} County<br>Condition: ${p.brcond}<br>Age: ${fmt(p.brage)} years<br>Traffic: ${fmt(p.__BRTraffic__)}<br>Detour: ${fmt(p.brdetour)} mi<br>Closure: 50=${yesno(p.br50)}, 100=${yesno(p.br100)}, 500=${yesno(p.br500)}`);
+        .html(`<strong>Bridge ${p.brid}</strong><br>${p.brcounty} County<br>Condition: ${p.brcond}<br>Age: ${fmt(p.brage)} years<br>Traffic: ${fmt(p.bradt)}<br>Detour: ${fmt(p.brdetour)} mi<br>Closure: 50=${yesno(p.br50)}, 100=${yesno(p.br100)}, 500=${yesno(p.br500)}`);
     }
 
     function hideTooltip() { tooltip.style("opacity", 0); }
@@ -1834,9 +1834,9 @@
         fd_50per: "50-yr (%)",
         fd_100per: "100-yr (%)",
         fd_500per: "500-yr (%)",
-        __FD50Traffic__: "50-yr Traffic",
-        __FD100Traffic__: "100-yr Traffic",
-        __FD500Traffic__: "500-yr Traffic",
+        fd_50adt: "50-yr Traffic",
+        fd_100adt: "100-yr Traffic",
+        fd_500adt: "500-yr Traffic",
         fd_50detav: "50-yr detour",
         fd_100detav: "100-yr detour",
         fd_500detav: "500-yr detour"
@@ -1845,7 +1845,7 @@
     }
 
     function pointLabel(key) {
-      return ({ brage: "Bridge age", __BRTraffic__: "Traffic", brdetour: "Detour length", closureSeverity: "Closure severity", brcond: "Condition" })[key] || key;
+      return ({ brage: "Bridge age", bradt: "Traffic", brdetour: "Detour length", closureSeverity: "Closure severity", brcond: "Condition" })[key] || key;
     }
 
     function rollupCounts(features, accessor) {
