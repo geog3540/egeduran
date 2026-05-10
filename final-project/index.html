@@ -665,8 +665,6 @@
   display: none;
 }
 
-
-/* v16 refinements: clean bivariate arrow and chart axis labels */
 .bivar-arrow {
   font-size: 12px;
   font-weight: 600;
@@ -844,12 +842,6 @@
   </div>
 
   <script>
-    // GitHub Pages is case-sensitive. These loaders try the common locations:
-    // 1) same folder as this HTML
-    // 2) a /data folder next to this HTML
-    // 3) one folder above this HTML
-    // This fixes the common problem where index.html is inside a project folder,
-    // but the JSON files are uploaded to the repository root.
     const COUNTY_FILE_CANDIDATES = [
       "IowaCounty.json",
       "./IowaCounty.json",
